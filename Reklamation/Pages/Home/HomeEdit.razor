@@ -1,0 +1,324 @@
+﻿@page "/"
+@page "/home"
+@page "/{Rek_ID:int}"
+
+@using Reklamation.Data
+@using Serilog
+@using Microsoft.Extensions.DependencyInjection;
+@inject IReklamationRepository repository
+@inject AuthenticationStateProvider GetAuthenticationStateAsync
+@inject NavigationManager NavigationManager
+@inject IServiceScopeFactory scopeFactory
+@inject INewMessageService MessageService
+@implements IDisposable
+
+@if (isAuthenticatedBool)
+{
+
+    @if (_Reklamations is null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        <ListData username="@username" Reklamations="_Reklamations" OnClick="ClickHandler" eNeuReklamation="NavigatetoNeu"
+                  eGoToReport="NavigatetoReport" eSaveChanges="SaveChanges" saveMessage="@saveMessage" saveErrorMessage="@saveErrorMessage"/>
+        <br />
+
+        <FormReklamation KTrkl_Reklamation="selectedReklamation" ImageNameToOpen="openSelectedBild" @ref="formrek" eSaveChanges="SaveChanges"
+                         eDeleteReklamation="DeleteReklamation" AllMessages="@AllMessages" userName="@username" eUpdateUnreadCount="@CountUnreadMessages"/>
+
+        <br />
+        <FormPositions KTrkl_Reklamation="selectedReklamation" Grunds="_Grunds" ENavigateToAdd="NavigatetoAdd" ENavigateToAddPos="NavigatetoAddPos" eSaveChanges="SaveChanges" />
+
+        @if (showBilderDialog)
+        {
+            <BilderCarousel source="@BildsToOpen" CloseDialog="() => showBilderDialog=false" />
+        }
+
+    }
+}
+else if (KTUsers is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <p><em>You are not authorized to see this page...</em></p>
+}
+
+@if (showStatusDialog)
+{
+    <StatusDialog FehlerList="fehlerList" FehlerListRekID="fehlerListID" ECloseDialog="closeStatusDialog" />
+}
+
+
+
+
+
+@code {
+
+    //Database
+    private List<KTrkl_Reklamation> _Reklamations { get; set; }
+    private List<KTrkl_TxtGrund> _Grunds { get; set; }
+    private List<KTEnumerator> KTUsers { get; set; }
+    private List<KTrkl_Message> AllMessages { get; set; }
+
+    //if coming from Create page, so that it can be on top of the list
+    [Parameter]
+    public int Rek_ID { get; set; }
+
+    private string username = "";
+    private KTrkl_Reklamation selectedReklamation { get; set; }
+    private string selectedRekUnmodifiedStatus;
+    private IList<string> BildsToOpen { get; set; }
+    private bool isAuthenticatedBool = false;
+    private List<string> fehlerList { get; set; }
+    private int fehlerListID { get; set; }
+    private bool showStatusDialog = false;
+    private bool showBilderDialog = false;
+    private string saveMessage = "";
+    private string saveErrorMessage = "";
+    private FormReklamation formrek;
+    private KTrkl_Reklamation reklamationToEdit { get; set; }
+    private ICollection<KTrkl_Positionen> positionsToEdit { get; set; }
+    private DateTime LastMessageReload { get; set; }
+    private List<int> UnReadMessages { get; set; }
+    
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        await getWindowsUser();
+        KTUsers = await repository.GetUsers();
+        isAuthenticated();
+
+        if (isAuthenticatedBool)
+        {
+            try
+            {
+                _Reklamations = await repository.GetAllReklamations();
+                _Grunds = await repository.GetAllGrunds();
+                AllMessages = await repository.GetAllMessages();
+                MessageService.OnNewMessageChanged += this.MessageChanged;
+                CountUnreadMessages();
+                LastMessageReload = DateTime.Now;
+
+                if (Rek_ID != 0)
+                {
+                    KTrkl_Reklamation reklamation = _Reklamations.Find(r => r.Rek_ID == Rek_ID);
+                    _Reklamations.Remove(reklamation);
+                    _Reklamations.Insert(0, reklamation);
+                }
+                selectedReklamation = _Reklamations.FirstOrDefault();
+                selectedRekUnmodifiedStatus = selectedReklamation.Status;
+            }
+            catch
+            {
+                Log.Error("Error in HomeEdit-OnInitialize Database call");
+            }
+        }
+
+    }
+    private async Task getWindowsUser()
+    {
+        var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
+        var user = authstate.User;
+        username = user.Identity.Name;
+    }
+    private void isAuthenticated()
+    {
+
+        if (KTUsers.Where(k => k.Name1.Equals("Reklamation"))
+            .Select(k => k.Enumerator.ToLower())
+            .ToList()
+            .Contains(username.ToLower()))
+        {
+            isAuthenticatedBool = true;
+        }
+
+    }
+    private async Task ClickHandler(KTrkl_Reklamation selected)
+    {
+        saveErrorMessage = "";
+        saveMessage = "";
+        formrek.bildErrorMessage = "";
+
+        if (await CheckStatus())
+        {
+            selectedReklamation = selected;
+            selectedRekUnmodifiedStatus = selectedReklamation.Status;
+        }
+        else
+        {
+            selectedReklamation.Status = selectedRekUnmodifiedStatus;
+            showStatusDialog = true;
+            selectedReklamation = selected;
+            selectedRekUnmodifiedStatus = selectedReklamation.Status;
+
+        }
+
+    }
+    private void openSelectedBild(IList<string> Bilds)
+    {
+        BildsToOpen = Bilds;
+        showBilderDialog = true;
+    }
+    private void NavigatetoNeu()
+    {
+        NavigationManager.NavigateTo($"neu/{0}", true);
+    }
+    private void NavigatetoAdd(KTrkl_Positionen position)
+    {
+        NavigationManager.NavigateTo($"neu/{2}/{position.Pos_ID}/{selectedReklamation.Auftragsnummer}/" +
+            $"{selectedReklamation.Lieferscheinnummer}/{selectedReklamation.Rek_ID}", true);
+    }
+    private void NavigatetoAddPos(KTrkl_Reklamation reklamation)
+    {
+        NavigationManager.NavigateTo($"neu/{1}/{reklamation.Rek_ID}/{reklamation.Auftragsnummer}/{reklamation.Lieferscheinnummer}", true);
+    }
+    private void NavigatetoReport()
+    {
+        NavigationManager.NavigateTo("report", false);
+    }
+    private async Task<bool> CheckStatus()
+    {
+        bool isValid = true;
+
+        if (selectedRekUnmodifiedStatus != "Fertig" && selectedReklamation.Status == "Fertig")
+        {
+            fehlerListID = selectedReklamation.Rek_ID;
+            StatusFehler sf = await repository.StatusCheckAsync(selectedReklamation.Rek_ID);
+
+            fehlerList = new List<string>();
+
+            if (sf.message.Contains("X1"))
+            {
+                fehlerList.Add("X1: Hat Kunde Recht soll ausgefüllt sein");
+                isValid = false;
+            }
+            if (sf.message.Contains("X2"))
+            {
+                fehlerList.Add("X2: Grund Unsere soll ausgefüllt sein");
+                isValid = false;
+            }
+            if (sf.message.Contains("X3"))
+            {
+                fehlerList.Add("X3: Wenn der Kunde Recht hat, soll Entweder Gutschrift Nummer oder Stornorechnungsnummer ausgefüllt sein.");
+                isValid = false;
+            }
+            if (sf.message.Contains("X4"))
+            {
+                fehlerList.Add("X4: Felgen - Pr Jahr, Pro B. Datum, Hersteller. ");
+                isValid = false;
+            }
+            if (sf.message.Contains("X5"))
+            {
+                fehlerList.Add("X5: Reifen - Serial No, D/W Jahr, Rest Prof Tiefe, Km Gefahren.");
+                isValid = false;
+            }
+            if (sf.message.Contains("X6"))
+            {
+                fehlerList.Add("X6: Aufjedenfall soll mindestens ein Bilder drin sein.");
+                isValid = false;
+            }
+
+        }
+
+        return isValid;
+    }
+    private void closeStatusDialog()
+    {
+        showStatusDialog = false;
+        fehlerList = null;
+        fehlerListID = 0;
+    }
+    public async Task SaveChanges()
+    {
+        if (await CheckStatus())
+        {
+            try
+            {
+
+                _Reklamations = repository.UpdaterInfo(_Reklamations, username);
+                await repository.SaveChangesReklamation();
+                saveMessage = "Saved";
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Error updating Reklamation: " + ex.Message);
+                saveErrorMessage = "Fehler beim speichern";
+            }
+        }
+        else
+        {
+            selectedReklamation.Status = selectedRekUnmodifiedStatus;
+            showStatusDialog = true;
+        }
+    }
+    public async Task DeleteReklamation(KTrkl_Reklamation reklamationToDelete)
+    {
+
+        await repository.DeleteReklamation(reklamationToDelete);
+
+        selectedReklamation = _Reklamations.FirstOrDefault();
+        selectedRekUnmodifiedStatus = selectedReklamation.Status;
+        _Reklamations.Remove(reklamationToDelete);
+
+        if (System.IO.Directory.Exists(ConstantValues.ImageSaveLocation + reklamationToDelete.Rek_ID))
+        {
+            System.IO.Directory.Delete(ConstantValues.ImageSaveLocation + reklamationToDelete.Rek_ID, true);
+        }
+    }
+    private async Task ReloadMessages()
+    {
+        using (var scope = scopeFactory.CreateScope())
+        {
+            var repo = scope.ServiceProvider.GetRequiredService<IReklamationRepository>();
+            AllMessages = await repository.GetAllMessages();
+        }
+        LastMessageReload = DateTime.Now;
+        Trace.WriteLine("In Reload");
+        CountUnreadMessages();
+    }
+    //Get notification from Database and query the messages. No query in 10 seconds..and query only if message is coming from another user..
+    private async void MessageChanged(object sender, NewMessageChangeEventArgs args)
+    {
+        var diffInSeconds = (DateTime.Now - LastMessageReload).TotalSeconds;
+        if (diffInSeconds > 10 && args.NewMessage.MUSER!=username)
+        {
+            await ReloadMessages();
+            Trace.WriteLine(args.NewMessage.Message + "....." + diffInSeconds);
+        }
+
+
+    }
+    public void Dispose()
+    {
+        this.MessageService.OnNewMessageChanged += this.MessageChanged;
+    }
+    private void CountUnreadMessages()
+    {
+        UnReadMessages = AllMessages
+            .Where(x => x.isRead == 0)
+            .Select(x => x.Web_ID)
+            .ToList();
+
+        foreach(KTrkl_Reklamation reklamation in _Reklamations)
+        {
+            reklamation.UnReadMessages = 0;
+        }
+
+        foreach(int webid in UnReadMessages)
+        {
+            KTrkl_Reklamation reklamation = _Reklamations.FirstOrDefault(x => x.Web_ID == webid);
+
+            if (reklamation != null)
+            {
+                reklamation.UnReadMessages++;
+            }
+        }
+    }
+
+}
+

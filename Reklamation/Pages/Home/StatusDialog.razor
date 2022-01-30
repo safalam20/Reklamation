@@ -1,0 +1,38 @@
+﻿<!-- The Modal -->
+<div id="myModal" class="statusmodal">
+
+
+    <!-- Modal content -->
+    <div class="statusmodal-content">
+
+        <button @onclick="closeDialog" type="button" class="btn btn-danger float-right m-0 p-0"><MudIcon Icon="@Icons.Material.Filled.Close" Title="Close" /></button>
+
+        <br /> <br />
+
+        <h5 class="ml-2">Reklamation ID: @FehlerListRekID</h5>
+        <br />
+        @foreach (string fehler in FehlerList)
+        {
+            <h6><MudIcon Icon="@Icons.Material.Filled.Error" Title="Fehler" Color="Color.Error" Class="mr-3" />@fehler</h6>
+        }
+
+
+    </div>
+
+</div>
+
+@code {
+    [Parameter]
+    public List<string> FehlerList { get; set; }
+
+    [Parameter]
+    public int FehlerListRekID { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> ECloseDialog { get; set; }
+
+    async Task closeDialog()
+    {
+        await ECloseDialog.InvokeAsync(true);
+    }
+}

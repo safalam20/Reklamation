@@ -1,0 +1,78 @@
+﻿
+    <div class="wrapper mt-2">
+        <table class="table table-hover table-striped mytable">
+            <thead class="font-weight-bolder">
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">BelID</th>
+                    <th scope="col">Mandant</th>
+                    <th scope="col">Vorgangsnummer</th>
+                    <th scope="col">Belegdatum</th>
+                    <th scope="col">Belegjahr</th>
+                    <th scope="col">Referenznummer</th>
+                    <th scope="col">Nettobetrag</th>
+                    <th scope="col">AuftragsJahr</th>
+                    <th scope="col">Auftragsnummer</th>
+                    <th scope="col">LieferscheinJahr</th>
+                    <th scope="col">Lieferscheinnummer</th>
+                    <th scope="col">RechnungsJahr</th>
+                    <th scope="col">Rechnungsnummer</th>
+                    <th scope="col">Kundennummer</th>
+                    <th scope="col">Kundenname</th>
+                    <th scope="col">Liefername</th>
+                    <th scope="col">A1PLZ</th>
+                    <th scope="col">A1Ort</th>
+                    <th scope="col">A1Land</th>
+
+                </tr>
+            </thead>
+            <tbody>
+                <Virtualize Items="FoundBeleges" Context="beleg">
+                    <tr class="@(beleg==selectedRow ? "selectedRow" : "")" @onclick="(()=> OnClickHandler(beleg))">
+                        <td scope="row">@(FoundBeleges.IndexOf(beleg)+1)</td>
+                        <td>@beleg.BelID</td>
+                        <td>@beleg.Mandant</td>
+                        <td>@beleg.Vorgangsnummer</td>
+                        <td>@beleg.Belegdatum?.ToString("dd/MM/yyyy")</td>
+                        <td>@beleg.Belegjahr</td>
+                        <td>@beleg.Referenznummer</td>
+                        <td>@beleg.Nettobetrag</td>
+                        <td>@beleg.AuftragsJahr</td>
+                        <td>@beleg.Auftragsnummer</td>
+                        <td>@beleg.LieferscheinJahr</td>
+                        <td>@beleg.Lieferscheinnummer</td>
+                        <td>@beleg.RechnungsJahr</td>
+                        <td>@beleg.Rechnungsnummer</td>
+                        <td>@beleg.Kundennummer</td>
+                        <td>@beleg.Kundenname</td>
+                        <td>@beleg.Liefername</td>
+                        <td>@beleg.A1PLZ</td>
+                        <td>@beleg.A1Ort</td>
+                        <td>@beleg.A1Land</td>
+                    </tr>
+
+
+                </Virtualize>
+
+            </tbody>
+        </table>
+    </div>
+
+
+@code {
+
+    [Parameter]
+    public List<BelegeDTO> FoundBeleges { get; set; }
+
+    [Parameter]
+    public EventCallback<BelegeDTO> OnClick { get; set; }
+
+    public BelegeDTO selectedRow { get; set; }
+
+    async Task OnClickHandler(BelegeDTO beleg)
+    {
+        selectedRow = beleg;
+        await OnClick.InvokeAsync(beleg);
+    }
+
+}

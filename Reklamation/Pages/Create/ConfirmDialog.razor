@@ -1,0 +1,41 @@
+﻿<!-- The Modal -->
+<div class="dltmodal">
+
+    <!-- Modal content -->
+    <div class="confirmmodal-content">
+        <h5 class="text-center">Sie haben keine Artikel hinzugefügt. Wollen Sie fortfahren?</h5>
+        <br/>
+        <div class="row text-center">
+            <div class="col">
+                <button type="button" class="btn btn-secondary px-4" @onclick="CancelClick">Artikel Hinzufügen</button>
+            </div>
+            <div class="col">
+                <button type="button" class="btn btn-success px-4" @onclick="DeleteClick">Fortfahren</button>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+@code {
+    
+
+    [Parameter]
+    public EventCallback<bool> ECreateWithoutArticles { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> EAddArticles { get; set; }
+
+
+    async Task CancelClick()
+    {
+        await EAddArticles.InvokeAsync(false);
+    }
+
+    async Task DeleteClick()
+    {
+        await ECreateWithoutArticles.InvokeAsync(true);
+    }
+
+}

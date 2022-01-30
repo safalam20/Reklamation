@@ -1,0 +1,413 @@
+﻿@page "/report"
+@using Reklamation.Data
+@using Serilog
+@using Reklamation.Services
+@inject IReklamationRepository repository
+@inject AuthenticationStateProvider GetAuthenticationStateAsync
+@inject NavigationManager MyNavigationManager
+@inject ExportExcel exportExcel
+
+@if (isAuthenticatedBool)
+{
+<nav class="navbar navbar-light justify-content-between py-0" style="background-color: #e3f2fd;">
+
+    <div class="row">
+
+        <div class="col">
+            <button class="btn btn-sm mt-1 px-5" type="button" @onclick="NavigateHome" style="background-color: yellow; color: black; ">
+                <MudIcon Icon="@Icons.Material.Filled.Home" Title="Home" Size="Size.Medium" />
+            </button>
+        </div>
+
+        <div class="col">
+            <p class="font-italic font-weight-bold mt-2 ml-5">@username</p>
+        </div>
+    </div>
+
+
+    <form class="form-inline">
+        <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search"
+               @bind-value="@SearchTerm" @bind-value:event="oninput">
+        <button class="btn btn-success btn-sm my-2 my-sm-0" type="button" @onclick="SearchClicked">Search</button>
+    </form>
+
+    <div class="row">
+        <div class="col">
+            <button class="btn btn-sm my-2 my-sm-0 px-5" type="button" @onclick="SaveChanges" style="background-color: forestgreen; color: whitesmoke; ">
+                <MudIcon Icon="@Icons.Material.Filled.Save" Title="Add" Size="Size.Medium" />
+            </button>
+        </div>
+        <div class="col my-auto">
+            @if (saveResult != "")
+            {
+                <p class="my-auto" style="@(saveResult=="Speichert!" ? "color:green; font-style:italic; font-weight:bold;" : "background-color:red; color:white; font-weight:bold;")">@saveResult</p>
+            }
+        </div>
+
+    </div>
+    
+
+  
+
+
+    <button class="btn btn-sm my-2 my-sm-0 px-5" type="button" @onclick="ExportExcel" style="background-color: black; color: whitesmoke; font-weight:bold;">
+        Export Excel
+    </button>
+
+    <div class="btn-group ml-4" role="group" aria-label="Basic example">
+        <button type="button" class="btn btn-secondary" @onclick="@(()=>ChangeMode(true))" style="@(isFelgenMode ? "background-color:#d8b944; color:black; box-shadow:none !important;" : "")">Felgen</button>
+        <button type="button" class="btn btn-secondary" @onclick="@(()=>ChangeMode(false))" style="@(!isFelgenMode ? "background-color:#d8b944; color:black; box-shadow:none !important; " : "")">Reifen</button>
+    </div>
+</nav>
+
+    @if (Reklamations is null)
+    {
+
+
+    }
+    else
+    {
+        <EditForm Model="@Reklamations">
+            <div class="wrapper">
+                <table class="table table-hover table-striped mytable proTable">
+                    <thead class="font-weight-bolder">
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col"> Rek_ID</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Vorgangsno</th>
+                            <th scope="col">Kundenno</th>
+                            <th scope="col">Kundenname</th>
+                            <th scope="col">Auftragsno</th>
+                            <th scope="col">Lieferschein</th>
+                            <th scope="col">Referenznummer</th>
+                            <th scope="col">RekSysDat</th>
+                            <th scope="col">Prod Statu</th>
+                            <th scope="col">Prod Text</th>
+
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <Virtualize Items="FilteredData ?? Reklamations" Context="reklamation">
+
+                            <tr class="@(reklamation==selectedRow ? "selectedRow" : "")" @onclick="(()=> OnClickHandler(reklamation))">
+                                <td scope="row">@(Reklamations.IndexOf(reklamation)+1)</td>
+
+                                <td>@reklamation.Rek_ID</td>
+                                <td>@reklamation.Status</td>
+                                <td>@reklamation.Vorgangsnummer</td>
+                                <td>@reklamation.Kundennummer</td>
+                                <td>@reklamation.Kundenname</td>
+                                <td>@reklamation.Auftragsnummer</td>
+                                <td>@reklamation.Lieferscheinnummer</td>
+                                <td>@reklamation.Referenznummer</td>
+                                <td>@reklamation.ReklamationsSystemDatum?.ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    <InputSelect @bind-Value="@reklamation.ProdStatu" class="form-control form-control-sm" id="ProdStatu">
+                                        <option value="Initial">Initial</option>
+                                        <option value="In Arbeit">In Arbeit</option>
+                                        <option value="Fertig">Fertig</option>
+                                    </InputSelect>
+                                </td>
+                                <td style="min-width:350px;">
+                                    <InputText @bind-Value="@reklamation.ProdText" class="form-control form-control-sm" id="ProdText" />
+                                </td>
+
+                              
+                            </tr>
+                        </Virtualize>
+                    </tbody>
+                </table>
+
+            </div>
+
+            <br />
+
+        </EditForm>
+
+        @if (!isFelgenMode && selectedRow != null)
+        {
+            <table class="table table-sm table-striped" style="font-size:80%;">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Menge</th>
+                        <th>ArtGruppe</th>
+                        <th>Artikelnummer</th>
+                        <th>GdKunde</th>
+                        <th>GdUnserer</th>
+                        <th>HatKundeRecht</th>
+                        <th>Bemerkung</th>
+                        <th>Automarke</th>
+                        <th>Modellbezeichnung</th>
+                        <th>Achse</th>
+                        <th>KMGefahren</th>
+                        @*<th>gesMenge</th>
+                        <th>gesArtikelno</th>*@
+                        <th>PrFehler</th>
+                        <th>ErgebnisWare</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (KTrkl_Positionen pos in selectedRow.Positionens)
+                    {
+                        <tr>
+                            <td>@pos.Menge</td>
+                            <td>@pos.ArtGruppe</td>
+                            <td>@pos.Artikelnummer</td>
+                            <td>@(GetGrundByID(pos.GrundK_ID))</td>
+                            <td>@(GetGrundByID(pos.GrundU_ID))</td>
+                            <td>@pos.HatKundeRecht</td>
+                            <td>@pos.Bemerkung</td>
+                            <td>@pos.SerialNoSerienNr</td>
+                            <td>@pos.DotWocheJahr</td>
+                            <td>@pos.RestProfiltiefe</td>
+                            <td>@pos.KMGefahren</td>
+                            @*<td>@pos.gesMenge</td>
+                            <td>@pos.gesArtikelnummer</td>*@
+                            <td>@pos.PrFehler</td>
+                            <td>@pos.ErgebnisWare</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        @if (isFelgenMode && selectedRow != null)
+        {
+            <table class="table table-sm table-striped" style="font-size:80%;">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Menge</th>
+                        <th>ArtGruppe</th>
+                        <th>Artikelnummer</th>
+                        <th>GdKunde</th>
+                        <th>GdUnserer</th>
+                        <th>HatKundeRecht</th>
+                        <th>Bemerkung</th>
+                        <th>Automarke</th>
+                        <th>Modellbezeichnung</th>
+                        <th>Achse</th>
+                        <th>PrFehler</th>
+                        <th>ErgebnisWare</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (KTrkl_Positionen pos in selectedRow.Positionens)
+                    {
+                        <tr>
+                            <td>@pos.Menge</td>
+                            <td>@pos.ArtGruppe</td>
+                            <td>@pos.Artikelnummer</td>
+                            <td>@(GetGrundByID(pos.GrundK_ID))</td>
+                            <td>@(GetGrundByID(pos.GrundU_ID))</td>
+                            <td>@pos.HatKundeRecht</td>
+                            <td>@pos.Bemerkung</td>
+                            <td>@pos.ProduktionsJahr</td>
+                            <td>@pos.ProduktionsbatchDatum</td>
+                            <td>@pos.Hersteller</td>
+                            <td>@pos.PrFehler</td>
+                            <td>@pos.ErgebnisWare</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        @if (showCarousel && source.Count != 0)
+        {
+            <ProCarousel source="@source" />
+        }
+
+
+    }
+}
+else if (KTUsers is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <p><em>You are not authorized to see this page...</em></p>
+}
+
+@if (showProgressDialog)
+{
+    <ProgressDialog/>
+}
+
+
+@code {
+
+    public List<KTrkl_Reklamation> _Reklamations { get; set; }
+
+    public List<KTrkl_Reklamation> Reklamations = new List<KTrkl_Reklamation>();
+
+    public List<KTrkl_Reklamation> FelgenReklamations = new List<KTrkl_Reklamation>();
+    public List<KTrkl_Reklamation> ReifenReklamations = new List<KTrkl_Reklamation>();
+    List<KTrkl_TxtGrund> _Grunds { get; set; }
+    List<KTEnumerator> KTUsers { get; set; }
+
+    public List<KTrkl_Positionen> Positions { get; set; }
+
+    public string username { get; set; }
+    bool isFelgenMode = false;
+    bool showCarousel = true;
+    bool showProgressDialog = false;
+    bool isAuthenticatedBool = false;
+    string saveResult = "";
+
+    public KTrkl_Reklamation selectedRow { get; set; }
+    public string SearchTerm { get; set; }
+    public List<KTrkl_Reklamation> FilteredData { get; set; }
+
+    public IList<string> source = new List<string>();
+    protected override async Task OnInitializedAsync()
+    {
+
+
+        await getWindowsUser();
+        KTUsers = await repository.GetUsers();
+        isAuthenticated();
+
+        if (isAuthenticatedBool)
+        {
+            try
+            {
+                _Grunds = await repository.GetAllGrunds();
+                _Reklamations = await repository.GetProFehlerReklamations();
+                ReifenReklamations = _Reklamations.Where(r => r.Positionens
+                .Any(p => p.ArtGruppe != null && p.ArtGruppe.Equals("REIFEN")))
+                    .ToList();
+
+                FelgenReklamations = _Reklamations.Where(r => r.Positionens
+                .Any(p => p.ArtGruppe != null && (p.ArtGruppe.Equals("FELGEN") || p.ArtGruppe.Equals("ALU") || p.ArtGruppe.Equals("STAHL"))))
+                    .ToList();
+
+                Reklamations = ReifenReklamations;
+                selectedRow = Reklamations.FirstOrDefault();
+
+                source = selectedRow.Bilds.Select(b => $"{MyNavigationManager.BaseUri}api/Bilder?Rek_ID={selectedRow.Rek_ID}&name={b.Bild}").ToList();
+
+            }
+            catch
+            {
+                Log.Error("Error in HomeEdit-OnInitialize Database call");
+            }
+        }
+    }
+    void isAuthenticated()
+    {
+        if (KTUsers.Where(k => k.Name1.Equals("Produktion"))
+            .Select(k => k.Enumerator.ToLower())
+            .ToList()
+            .Contains(username.ToLower()))
+        {
+            isAuthenticatedBool = true;
+        }
+    }
+
+    async Task SaveChanges()
+    {
+        saveResult = "";
+
+        try
+        {
+            await repository.SaveChangesNoParam();
+            saveResult = "Speichert!";
+        }
+        catch (Exception ex)
+        {
+            Log.Error("Error updating Production-Reklamation: " + ex.Message);
+            saveResult = "Fehler beim speichern!";
+        }
+    }
+
+    async Task getWindowsUser()
+    {
+        var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
+        var user = authstate.User;
+        username = user.Identity.Name;
+    }
+
+    void ChangeMode(bool isFelgen)
+    {
+        saveResult = "";
+
+        if (isFelgen)
+        {
+            isFelgenMode = true;
+            Reklamations = FelgenReklamations;
+        }
+        else
+        {
+            isFelgenMode = false;
+            Reklamations = ReifenReklamations;
+        }
+    }
+
+    async Task OnClickHandler(KTrkl_Reklamation reklamation)
+    {
+        saveResult = "";
+
+        if (selectedRow != reklamation)
+        {
+            showCarousel = false;
+            await Task.Delay(1);
+            selectedRow = reklamation;
+            source = selectedRow.Bilds.Select(b => $"{MyNavigationManager.BaseUri}api/Bilder?Rek_ID={selectedRow.Rek_ID}&name={b.Bild}").ToList();
+            showCarousel = true;
+        }
+
+    }
+    void SearchClicked()
+    {
+        if (SearchTerm == "")
+        {
+            FilteredData = null;
+        }
+        else
+        {
+            FilteredData = Reklamations.Where(r => r.Rek_ID.ToString() == SearchTerm ||
+         r.Status == SearchTerm ||
+         r.Vorgangsnummer.ToString() == SearchTerm ||
+         r.Kundennummer == SearchTerm ||
+         r.Kundenname.Contains(SearchTerm) ||
+         r.Auftragsnummer.ToString() == SearchTerm ||
+         r.Lieferscheinnummer.ToString() == SearchTerm ||
+         r.Referenznummer == SearchTerm ||
+         r.ReklamationsSystemDatum?.ToString("dd/MM/yyyy") == SearchTerm
+    ).ToList();
+        }
+
+    }
+
+    void NavigateHome()
+    {
+        MyNavigationManager.NavigateTo("", false);
+    }
+
+    string GetGrundByID(int? id)
+    {
+        if (id != null)
+        {
+            return _Grunds.Find(g => g.Grund_ID == id).Grund;
+        }
+        else
+        {
+            return "";
+        }
+
+    }
+
+    async Task ExportExcel()
+    {
+        showProgressDialog = true;
+
+        Positions = await repository.GetAllPositions();
+        exportExcel.exportToExcel(Positions, _Grunds);
+
+        MyNavigationManager.NavigateTo("api/Dowload", true);
+
+        showProgressDialog = false;
+    }
+
+}

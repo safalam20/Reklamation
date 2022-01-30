@@ -1,0 +1,31 @@
+﻿<!-- The Modal -->
+<div id="myModal" class="statusmodal">
+
+
+    <!-- Modal content -->
+    <div class="statusmodal-content">
+
+        <button @onclick="closeDialog" type="button" class="btn btn-danger float-right m-0 p-0"><MudIcon Icon="@Icons.Material.Filled.Close" Title="Close" /></button>
+
+        <br /> <br />
+
+        <h4 class="text-center">@messageToShow</h4>
+        <br />
+
+    </div>
+
+</div>
+
+@code {
+
+    [Parameter]
+    public EventCallback<bool> ECloseDialog { get; set; }
+
+    [Parameter]
+    public string messageToShow { get; set; }
+
+    async Task closeDialog()
+    {
+        await ECloseDialog.InvokeAsync(true);
+    }
+}

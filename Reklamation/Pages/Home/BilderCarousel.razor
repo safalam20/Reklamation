@@ -1,0 +1,36 @@
+﻿<!-- The Modal -->
+<div id="myModal" class="modal">
+    <div class="topright"><button @onclick="closeDialog" type="button" class="btn btn-danger"><MudIcon Icon="@Icons.Material.Filled.Close" Title="Favorite" /></button></div>
+    <!-- Modal content -->
+    <div class="modal-content">
+
+
+        <MudCarousel ItemsSource="@source" Style="height:750px; " ShowArrows="@true" ShowDelimiters="true" AutoCycle="false">
+            <ItemTemplate>
+                <div class="d-flex flex-column flex-column justify-center" style="height:100%">
+                    <img src="@context" alt="..." class="carouselImage">
+                </div>
+            </ItemTemplate>
+        </MudCarousel>
+    </div>
+
+</div>
+
+
+
+@code{
+
+    [Parameter]
+    public IList<string> source { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> CloseDialog { get; set; }
+
+    IReadOnlyList<IBrowserFile> selectedFiles;
+
+    async Task closeDialog()
+    {
+        await CloseDialog.InvokeAsync(false);
+    }
+
+}

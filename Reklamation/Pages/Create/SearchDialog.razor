@@ -1,0 +1,105 @@
+﻿<!-- The Modal -->
+<div id="myModal" class="addmodal">
+    <div class="topright"><button @onclick="closeDialog" type="button" class="btn btn-danger"><MudIcon Icon="@Icons.Material.Filled.Close" Title="Close" /></button></div>
+
+    <!-- Modal content -->
+    <div class="addmodal-content">
+        <EditForm Model="@findBeleg" OnValidSubmit="@OnValidSubmitForm" OnInvalidSubmit="@OnInvalidSubmitForm">
+
+            <div class="form-group row m-1">
+                <label for="kundeno" class="col-sm-5 col-form-label col-form-label- font-weight-bold">Kundennummer</label>
+                <div class="col-sm-7">
+                    <InputText @bind-Value="@findBeleg.Kundennummer" class="form-control form-control" id="kundeno" />
+                </div>
+            </div>
+
+            <div class="form-group row m-1">
+                <label for="fBelegdatum" class="col-sm-5 col-form-label col-form-label font-weight-bold">Belegdatum</label>
+                <div class="col-sm-7">
+                    <InputDate @bind-Value="@findBeleg.Belegdatum" class="form-control form-control" id="Belegdatum" />
+                </div>
+            </div>
+
+            <div class="form-group row m-1">
+                <label for="fAuftragsnummer" class="col-sm-5 col-form-label col-form-label font-weight-bold">Auftragsnummer</label>
+                <div class="col-sm-7">
+                    <InputText @bind-Value="@findBeleg.Auftragsnummer" class="form-control form-control" id="Auftragsnummer" />
+                </div>
+            </div>
+
+            <div class="form-group row m-1">
+                <label for="fLieferscheinnummer" class="col-sm-5 col-form-label col-form-label font-weight-bold">Lieferscheinnummer</label>
+                <div class="col-sm-7">
+                    <InputText @bind-Value="@findBeleg.Lieferscheinnummer" class="form-control form-control" id="Lieferscheinnummer" />
+                </div>
+            </div>
+
+            <div class="form-group row m-1">
+                <label for="fRechnungsnummer" class="col-sm-5 col-form-label col-form-label font-weight-bold">Rechnungsnummer</label>
+                <div class="col-sm-7">
+                    <InputText @bind-Value="@findBeleg.Rechnungsnummer" class="form-control form-control" id="Rechnungsnummer" />
+                </div>
+            </div>
+
+            <div class="form-group row m-1">
+                <label for="fReferenznummer" class="col-sm-5 col-form-label col-form-label font-weight-bold">Referenznummer</label>
+                <div class="col-sm-7">
+                    <InputText @bind-Value="@findBeleg.Referenznummer" class="form-control form-control" id="Referenznummer" />
+                </div>
+            </div>
+            <br />
+            <input type="submit" class="btn btn-info ml-3" value="Search" disabled="@isContextBusy" />
+
+            @if (message != "") {
+            <div class="alert alert-danger mt-2" role="alert">
+                @message
+            </div>
+            }
+
+
+        </EditForm>
+    </div>
+
+</div>
+
+@code {
+
+    FindBelegDTO findBeleg = new FindBelegDTO();
+    string message = "";
+
+    [Parameter]
+    public EventCallback<bool> CloseDialog { get; set; }
+
+    [Parameter]
+    public EventCallback<FindBelegDTO> FindBelegs { get; set; }
+
+    [Parameter] public bool isContextBusy { get; set; }
+
+    async Task OnValidSubmitForm()
+    {
+        if (findBeleg.Kundennummer == null && findBeleg.Lieferscheinnummer == null &&
+            findBeleg.Belegdatum == null && findBeleg.Rechnungsnummer == null &&
+            findBeleg.Referenznummer == null && findBeleg.Auftragsnummer == null)
+        {
+            message = "Can't leave all the fields empty..";
+        }
+        else
+        {
+            await FindBelegs.InvokeAsync(findBeleg);
+
+            Debug.WriteLine(findBeleg.Auftragsnummer + "," + findBeleg.Belegdatum + "," + findBeleg.Kundennummer + "," +
+                findBeleg.Lieferscheinnummer + "," + findBeleg.Rechnungsnummer + "," + findBeleg.Referenznummer);
+        }
+
+    }
+    void OnInvalidSubmitForm()
+    {
+
+    }
+
+    async Task closeDialog()
+    {
+        await CloseDialog.InvokeAsync(false);
+    }
+
+}

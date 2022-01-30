@@ -1,0 +1,47 @@
+﻿@if (ready)
+{
+    <!-- The Modal -->
+    <div class="modalbemerkung">
+        <br />
+        <!-- Modal content -->
+        <div class="modal-contentbemerkung">
+            <div class="topright"><button @onclick="closeDialog" type="button" class="btn btn-danger"><MudIcon Icon="@Icons.Material.Filled.Close" Title="Close" /></button></div>
+            <br />
+
+            @for(int i = 0; i < bemerkungArray.Length; i++)
+                {
+                    <p class="m-0 p-0" style="font-weight:bold; margin-left:100px !important;">@bemerkungArray[i]</p>
+                }
+
+
+        </div>
+
+    </div>
+
+}
+
+
+@code {
+
+    [Parameter]
+    public EventCallback<bool> CloseDialog { get; set; }
+    [Parameter]
+    public string BemerkungText { get; set; }
+    private bool ready = false;
+    string[] bemerkungArray;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        bemerkungArray = BemerkungText.Split("|");
+        ready = true;
+    }
+
+    private async Task closeDialog()
+    {
+        await CloseDialog.InvokeAsync(false);
+    }
+
+
+
+
+}

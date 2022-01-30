@@ -1,0 +1,42 @@
+﻿<!-- The Modal -->
+<div id="myModal" class="dltmodal">
+
+
+    <!-- Modal content -->
+    <div class="dltmodal-content">
+        <h3 class="text-center">Sicher Löschen?</h3>
+
+        <div class="row text-center">
+            <div class="col">
+                <button type="button" class="btn btn-secondary px-4" @onclick="CancelClick">Abbrechen</button>
+            </div>
+            <div class="col">
+                <button type="button" class="btn btn-danger px-4" @onclick="DeleteClick">Löschen</button>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+@code {
+   
+
+    [Parameter]
+    public EventCallback<bool> EDeleteReklamation { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> ECancelDelete { get; set; }
+
+
+    async Task CancelClick()
+    {
+        await ECancelDelete.InvokeAsync(false);
+    }
+
+    async Task DeleteClick()
+    {
+        await EDeleteReklamation.InvokeAsync(true);
+    }
+
+}

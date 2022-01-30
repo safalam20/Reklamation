@@ -1,0 +1,312 @@
+﻿@using Reklamation.Data
+@inject IReklamationRepository repository
+@using Serilog
+
+<div class="wrapper">
+    <EditForm Model="@Positions" OnValidSubmit="@OnValidSubmit" >
+        <table class="table mytable col-sm-6">
+            <thead class="font-weight-bolder">
+                <tr>
+                    @*<td class="scale"><input type="checkbox" @onchange="eventArgs => { OnCheckBoxChange(eventArgs.Value); }" disabled="@(isAddMode || isAddPosMode)" /></td>*@
+                    <th scope="col">#</th>
+                    <th scope="col">BelPosID</th>
+                    <th scope="col">Mandant</th>
+                    <th scope="col">BelID</th>
+                    <th scope="col">Position</th>
+                    <th scope="col">Reklamation Menge</th>
+                    <th scope="col">Menge Bestellung</th>
+                    <th style="font-weight:bolder;" scope="col">Neue Reklamation Menge*</th>
+                    <th scope="col">USER_Artikelgruppe</th>
+                    <th scope="col">Artikelnummer</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (BelegPosDTO pos in Positions)
+                {
+                <tr style="@((positionToUpdate!=null && pos.Artikelnummer==positionToUpdate.Artikelnummer) ? "background-color:#82e896;" : "")
+                                @((reklamationToAddPositions!=null && reklamationToAddPositions.Positionens.Any(p=>p.Artikelnummer==pos.Artikelnummer)) ? "background-color:yellow;" : "")">
+                    @*<td class="scale">
+                        <InputCheckbox @bind-Value="pos.isSelected"
+                                       disabled="@((isAddPosMode && reklamationToAddPositions.Positionens.Any(p=>p.Artikelnummer==pos.Artikelnummer)) || isAddMode
+                                                                /* || (pos.USER_Artikelgruppe==null || (!pos.USER_Artikelgruppe.Equals("FELGEN") && !pos.USER_Artikelgruppe.Equals("REIFEN")))*/)" />
+                    </td>*@
+                    <td scope="row">@(Positions.IndexOf(pos)+1)</td>
+                    <td>@pos.BelPosID</td>
+                    <td>@pos.Mandant</td>
+                    <td>@pos.BelID</td>
+                    <td style="text-align:center;">@pos.Position</td>
+                    <td style="@(pos.RekMenge!=null ? "color:red; font-weight:bold; text-align:center; font-size:120%;" : "")">@pos.RekMenge</td>
+                    @*<td>
+                        <InputNumber @bind-Value="@pos._Menge" class="form-control form-control-sm" id="Menge" style="max-width:80px"
+                                     disabled="@((isAddPosMode && reklamationToAddPositions.Positionens.Any(p=>p.Artikelnummer==pos.Artikelnummer)) ||
+                                                     (isAddMode && pos.Artikelnummer!=positionToUpdate.Artikelnummer))" />
+                    </td>*@
+                    <td style="text-align:center; font-weight:bold; font-size:120%;">@pos._Menge</td>
+                    <td style="@((pos.RekMenge+pos.NeuReklamationMenge>pos._Menge || pos.NeuReklamationMenge>pos._Menge) ? "background-color:red;" : "")">
+                        <InputNumber @bind-Value="@pos.NeuReklamationMenge" class="form-control form-control-sm" id="Menge" style="max-width:80px; text-align:center;"
+                                     disabled="@((isAddPosMode && reklamationToAddPositions.Positionens.Any(p=>p.Artikelnummer==pos.Artikelnummer)) ||
+                                                     (isAddMode && pos.Artikelnummer!=positionToUpdate.Artikelnummer))" />
+                    </td>
+                    <td>@pos.USER_Artikelgruppe</td>
+                    <td>@pos.Artikelnummer</td>
+                </tr>
+                }
+            </tbody>
+        </table>
+
+
+        @if (isAddMode == false && isAddPosMode == false)
+        {
+            <input type="submit" class="btn btn-info mb-2" value="Speichern" disabled="@isContextBusy" style="background-color: #04AA6D; color: #ffffff; " />
+        }
+        else if (isAddMode)
+        {
+
+            <input type="submit" class="btn btn-info mb-2" value="Menge Hinzufügen" disabled="@isContextBusy" style="background-color: #04AA6D; color: #ffffff; " />
+            <p style="display:inline-block; margin-left:200px; background-color:red; padding:4px; font-weight:bolder;">Aktuelle Menge: @positionToUpdate.Menge</p>
+        }
+        else
+        {
+            <input type="submit" class="btn btn-info mb-2" value="Position Hinzufügen" disabled="@isContextBusy" style="background-color: #04AA6D; color: #ffffff; " />
+        }
+
+    </EditForm>
+
+    @if (message != "")
+    {
+        <div class="alert alert-danger col-4" role="alert">
+            @message
+        </div>
+    }
+
+
+</div>
+
+@if (showConfirmationDialog)
+{
+    <ConfirmDialog EAddArticles="AddArticlesBeforeCreate" ECreateWithoutArticles="CreateRekWithoutArticles" />
+}
+
+
+@code {
+
+    [Parameter] public List<BelegPosDTO> Positions { get; set; }
+    [Parameter] public BelegeDTO SelectedBeleg { get; set; }
+    [Parameter] public EventCallback<bool> ENavigateBack { get; set; }
+    [Parameter] public EventCallback<bool> EisContextBusy { get; set; }
+    [Parameter] public KTrkl_Positionen positionToUpdate { get; set; }
+    [Parameter] public KTrkl_Reklamation reklamationToAddPositions { get; set; }
+    [Parameter] public bool isContextBusy { get; set; }
+    [Parameter] public bool isAddMode { get; set; }
+    [Parameter] public bool isAddPosMode { get; set; }
+    [Parameter] public string username { get; set; }
+
+    Dictionary<int, int?> MengeDic = new Dictionary<int, int?>();
+    bool isAllSelected = false;
+    bool showConfirmationDialog = false;
+    string message = "";
+
+
+
+    async Task OnValidSubmit()
+    {
+        message = "";
+
+
+        if (isAddMode)
+        {
+            if (CheckMenge())
+            {
+                await EisContextBusy.InvokeAsync(true);
+                await UpdateMenge();
+            }
+            else
+            {
+                message = "Die Summe ist zu groß!!!..";
+            }
+
+        }
+        else if (isAddPosMode)
+        {
+            if (CheckMengeAddPosition())
+            {
+                await EisContextBusy.InvokeAsync(true);
+                await AddNewPositions();
+            }
+            else
+            {
+                message = "Menge ist zu groß!!!..";
+            }
+
+        }
+        else
+        {
+            if (CheckMengeInitial())
+            {
+                await EisContextBusy.InvokeAsync(true);
+                if (Positions.Where(p => p.NeuReklamationMenge!=null && p.NeuReklamationMenge>0).Count() > 0)
+                {
+                    await CreateNewReklamation();
+                }
+                else
+                {
+                    showConfirmationDialog = true;
+                }
+
+
+            }
+            else
+            {
+                message = "Menge ist zu Groß!!!";
+                await EisContextBusy.InvokeAsync(false);
+            }
+        }
+        await EisContextBusy.InvokeAsync(false);
+    }
+    async Task UpdateMenge()
+    {
+        BelegPosDTO positionForm = Positions.Where(p => p.Artikelnummer == positionToUpdate.Artikelnummer).FirstOrDefault();
+        positionToUpdate.Menge = positionToUpdate.Menge + positionForm.NeuReklamationMenge;
+        await repository.SaveChangesNoParam();
+        await ENavigateBack.InvokeAsync(true);
+    }
+    async Task AddNewPositions()
+    {
+        foreach (BelegPosDTO pos in Positions)
+        {
+           
+
+            if(pos.NeuReklamationMenge!=null && pos.NeuReklamationMenge > 0)
+            {
+                KTrkl_Positionen newPosition = new KTrkl_Positionen
+                {
+                    Menge = pos.NeuReklamationMenge,
+                    Mandant = pos.Mandant,
+                    BelID = pos.BelID,
+                    BelPosID = pos.BelPosID,
+                    ArtGruppe = pos.USER_Artikelgruppe,
+                    ArtikelGruppe = pos.USER_Artikelgruppe,
+                    Artikelnummer = pos.Artikelnummer
+                };
+
+                reklamationToAddPositions.Positionens.Add(newPosition);
+            }
+        }
+
+        await repository.SaveChangesNoParam();
+        await ENavigateBack.InvokeAsync(true);
+    }
+    async Task CreateNewReklamation()
+    {
+        KTrkl_Reklamation newReklamation = new KTrkl_Reklamation
+        {
+            Mandant = SelectedBeleg.Mandant,
+            Vorgangsnummer = SelectedBeleg.Vorgangsnummer,
+            Auftragsnummer = SelectedBeleg.Auftragsnummer,
+            Lieferscheinnummer = SelectedBeleg.Lieferscheinnummer,
+            Referenznummer = SelectedBeleg.Referenznummer,
+            Belegdatum = SelectedBeleg.Belegdatum,
+            ReklamationsSystemDatum = DateTime.Now,
+            Kundennummer = SelectedBeleg.Kundennummer,
+            Kundenname = SelectedBeleg.Kundenname,
+            AuftragsJahr = SelectedBeleg.AuftragsJahr,
+            LieferscheinJahr = SelectedBeleg.LieferscheinJahr,
+            Ersteller=username,
+            Erstelldatum=DateTime.Now,
+            BelID=SelectedBeleg.BelID,
+            RechnungsJahr=SelectedBeleg.RechnungsJahr,
+            Rechnungsnummer=SelectedBeleg.Rechnungsnummer,
+            Status="In Arbeit"
+        };
+
+        List<KTrkl_Positionen> newPositionList = new List<KTrkl_Positionen>();
+
+        foreach (BelegPosDTO pos in Positions)
+        {
+            if (pos.NeuReklamationMenge!=null && pos.NeuReklamationMenge>0)
+            {
+
+                KTrkl_Positionen newPosition = new KTrkl_Positionen
+                {
+                    Menge=pos.NeuReklamationMenge,
+                    Mandant = pos.Mandant,
+                    BelID = pos.BelID,
+                    BelPosID = pos.BelPosID,
+                    ArtGruppe = pos.USER_Artikelgruppe,
+                    ArtikelGruppe = pos.USER_Artikelgruppe,
+                    Artikelnummer = pos.Artikelnummer
+                };
+                newPositionList.Add(newPosition);
+            }
+        }
+        newReklamation.Positionens = newPositionList;
+
+        try
+        {
+            await repository.AddNewReklamation(newReklamation);
+            await ENavigateBack.InvokeAsync(true);
+        }
+        catch
+        {
+            Log.Error("Error saving new Reklamation");
+        }
+    }
+    bool CheckMenge()
+    {
+        BelegPosDTO pos = Positions.Where(p => p.Artikelnummer == positionToUpdate.Artikelnummer).FirstOrDefault();
+
+       
+        if(pos.RekMenge!=null && pos.RekMenge + pos.NeuReklamationMenge > pos._Menge)
+        {
+            return false;
+        }else if(pos.RekMenge==null && pos.NeuReklamationMenge > pos._Menge)
+        {
+            return false;
+        }
+
+        return true;
+    }
+    bool CheckMengeInitial()
+    {
+        foreach (BelegPosDTO pos in Positions)
+        {
+           
+
+            if(pos.RekMenge==null && pos.NeuReklamationMenge > pos._Menge)
+            {
+                return false;
+            }
+            else if (pos.RekMenge!=null && pos.RekMenge + pos.NeuReklamationMenge > pos._Menge)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+    bool CheckMengeAddPosition()
+    {
+        foreach(BelegPosDTO pos in Positions)
+        {
+            if(pos.NeuReklamationMenge!=null && pos.NeuReklamationMenge > 0)
+            {
+                if(pos.RekMenge!=null && pos.RekMenge + pos.NeuReklamationMenge > pos._Menge)
+                {
+                    return false;
+                }else if(pos.RekMenge==null && pos.NeuReklamationMenge > pos._Menge)
+                {
+                    return false;
+                }
+            }
+
+        }
+        return true;
+    }
+    void AddArticlesBeforeCreate()
+    {
+        showConfirmationDialog = false;
+    }
+    async Task CreateRekWithoutArticles()
+    {
+        await CreateNewReklamation();
+    }
+}

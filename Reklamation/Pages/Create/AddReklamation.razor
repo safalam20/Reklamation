@@ -1,0 +1,199 @@
+﻿@page "/neu/{Pagemode:int}"
+@page "/neu/{Pagemode:int}/{Pos_ID:int}/{Auftragsnummer:int}/{Lieferscheinnummer:int}/{Rek_ID:int}"
+@page "/neu/{Pagemode:int}/{Rek_ID:int}/{Auftragsnummer:int}/{Lieferscheinnummer:int}"
+
+@using Reklamation.Data
+@inject AuthenticationStateProvider GetAuthenticationStateAsync
+@inject IReklamationRepository repository
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider GetAuthenticationStateAsync
+
+@if (isAuthenticatedBool)
+{
+    <nav class="navbar navbar-light justify-content-between py-0" style="background-color: #e3f2fd;">
+        <div>
+            <button type="button" class="btn btn-danger btn-lg pt-0 pb-0 m-1" @onclick="()=>goBackToEdit()">
+                <MudIcon Icon="@Icons.Material.Filled.ArrowBack" Title="Back" Color="Color.Dark" Size="Size.Medium" />
+            </button>
+
+            @if (isAddMode == false && isAddPosMode == false)
+            {
+                <button type="button" class="btn btn-success btn-lg pt-0 pb-0 m-1 ml-5" @onclick="()=>showAddDialog=true">
+                    <MudIcon Icon="@Icons.Material.Filled.Search" Title="Suche" Color="Color.Surface" Size="Size.Medium" />
+                </button>
+            }
+        </div>
+    </nav>
+
+    @if (showAddDialog && Pagemode == 0)
+    {
+        <SearchDialog CloseDialog="closeDialog" FindBelegs="FindBelegs" isContextBusy="isContextBusy" />
+    }
+    @if (Beleges is not null)
+    {
+        <ListFoundBelegs FoundBeleges="Beleges" OnClick="ClickHandler" />
+        <br />
+        <br />
+        <br />
+    }
+    @if (BelegPosList is not null)
+    {
+        <ListPositions Positions="BelegPosList" SelectedBeleg="selectedBeleg" ENavigateBack="NavigateBack"
+                       isContextBusy="isContextBusy" EisContextBusy="ChangeContexttoBusy" isAddMode="isAddMode"
+                       isAddPosMode="isAddPosMode" positionToUpdate="positionToUpdate"
+                       reklamationToAddPositions="reklamationToAddPositions" username="@username" />
+    }
+}
+else if (KTUsers is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <p><em>You are not authorized to see this page...</em></p>
+}
+
+
+
+
+@code {
+
+    List<BelegeDTO> Beleges { get; set; }
+    List<BelegPosDTO> BelegPosList { get; set; }
+    KTrkl_Positionen positionToUpdate { get; set; }
+    KTrkl_Reklamation reklamationToAddPositions { get; set; }
+    List<KTEnumerator> KTUsers { get; set; }
+
+    [Parameter] public int Auftragsnummer { get; set; }
+    [Parameter] public int Lieferscheinnummer { get; set; }
+    [Parameter] public int Pos_ID { get; set; }
+    [Parameter] public int Pagemode { get; set; }
+    [Parameter] public int Rek_ID { get; set; }
+    [Parameter] public int AuftragsJahr { get; set; }
+
+    bool isAddMode = false;
+    bool isAddPosMode = false;
+    BelegeDTO selectedBeleg { get; set; }
+    bool showAddDialog = true;
+    bool isContextBusy = false;
+    string username = "";
+    bool isAuthenticatedBool = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        await getWindowsUser();
+        KTUsers = await repository.GetUsers();
+        isAuthenticated();
+    }
+    void isAuthenticated()
+    {
+
+        if (KTUsers.Where(k => k.Name1.Equals("Reklamation"))
+           .Select(k => k.Enumerator.ToLower())
+           .ToList()
+           .Contains(username.ToLower()))
+        {
+            isAuthenticatedBool = true;
+        }
+
+    }
+
+    void closeDialog()
+    {
+        showAddDialog = false;
+    }
+    protected override async Task OnParametersSetAsync()
+    {
+        //Add menge to positions
+        if (Pagemode == 2)
+        {
+            isAddMode = true;
+            isAddPosMode = false;
+
+            Beleges = await repository.GetBelegeBySearch(null, null,
+           Auftragsnummer.ToString(), Lieferscheinnummer.ToString(), null, null);
+
+            selectedBeleg = Beleges.FirstOrDefault();
+            BelegPosList = await repository.GetBelegPosByBelegID(selectedBeleg.BelID);
+
+            positionToUpdate = await repository.GetPositionByPosID(Pos_ID);
+        }
+
+        //Add positions from Beleg to Reklamation
+        else if (Pagemode == 1)
+        {
+            isAddPosMode = true;
+            isAddMode = false;
+
+            Beleges = await repository.GetBelegeBySearch(null, null,
+           Auftragsnummer.ToString(), Lieferscheinnummer.ToString(), null, null);
+
+            selectedBeleg = Beleges.FirstOrDefault();
+            BelegPosList = await repository.GetBelegPosByBelegID(selectedBeleg.BelID);
+
+            reklamationToAddPositions = await repository.GetReklamationByRekID(Rek_ID);
+        }
+    }
+    async Task FindBelegs(FindBelegDTO search)
+    {
+        // if (Auftragsnummer == 0 && Lieferscheinnummer == 0)
+        if (Pagemode == 0)
+        {
+            isContextBusy = true;
+            isAddMode = false;
+            isAddPosMode = false;
+
+            Beleges = await repository.GetBelegeBySearch(search.Kundennummer, search.Belegdatum,
+                search.Auftragsnummer, search.Lieferscheinnummer, search.Rechnungsnummer, search.Referenznummer);
+
+            selectedBeleg = Beleges.FirstOrDefault();
+
+            showAddDialog = false;
+
+            if (selectedBeleg != null)
+            {
+                BelegPosList = await repository.GetBelegPosByBelegID(selectedBeleg.BelID);
+            }
+            isContextBusy = false;
+
+            await getWindowsUser();
+        }
+    }
+
+    async Task getWindowsUser()
+    {
+        var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
+        var user = authstate.User;
+        username = user.Identity.Name;
+    }
+
+    async Task ClickHandler(BelegeDTO selected)
+    {
+        if (!isContextBusy)
+        {
+            isContextBusy = true;
+            selectedBeleg = selected;
+            BelegPosList = null;
+
+            BelegPosList = await repository.GetBelegPosByBelegID(selected.BelID);
+            isContextBusy = false;
+        }
+    }
+
+    void NavigateBack()
+    {
+        NavigationManager.NavigateTo($"{Rek_ID}", true);
+    }
+    void ChangeContexttoBusy(bool value)
+    {
+        isContextBusy = value;
+    }
+    void goBackToEdit()
+    {
+        NavigationManager.NavigateTo("", true);
+    }
+
+
+
+}

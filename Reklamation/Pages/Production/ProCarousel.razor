@@ -1,0 +1,23 @@
+﻿
+@if (source != null) {
+<MudCarousel Style="height:300px;" ShowArrows="true" ShowDelimiters="true" AutoCycle="false" TData="object">
+
+    @foreach (string s in source)
+    {
+        <MudCarouselItem Transition="transition" Color="@Color.Transparent">
+            <div class="d-flex" style="height:100%">
+                <img src="@s" alt="..." class="carouselImage">
+            </div>
+        </MudCarouselItem>
+    }
+</MudCarousel>
+}
+
+
+@code{
+
+    private Transition transition = Transition.Slide;
+
+    [Parameter]
+    public IList<string> source { get; set; }
+}

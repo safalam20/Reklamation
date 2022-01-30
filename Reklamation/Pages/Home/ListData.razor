@@ -1,0 +1,296 @@
+﻿<nav class="navbar navbar-light justify-content-between py-0" style="background-color: #e3f2fd;">
+    <p class="font-italic font-weight-bold ml-5 mb-0 mr-5">
+        @username
+        <span class="ml-5">
+            <button class="btn btn-dark btn-sm" type="button" @onclick="GoToReport" style="font-weight:bold;">Report</button>
+        </span>
+      
+    </p>
+
+    <EditForm Model="@filterDTO">
+        <div class="form-row">
+
+            <div class="col">
+                <button class="btn btn-sm font-weight-bold mt-1 px-5" type="button" @onclick="ResetList" style="background-color: yellow; color: black; ">
+                    Reset
+                </button>
+            </div>
+
+            <div class="col">
+                <InputText @bind-Value="@filterDTO.searchTerm" class="form-control" id="FSearchTerm" placeholder="Search"/>
+            </div>
+
+            <div class="col">                                      
+                <div class="form-check ml-5">
+                    <InputCheckbox @bind-Value="@filterDTO.isStored" class="form-check-input mt-3" id="FSearchCheck" style="transform:scale(1.5);" />
+                    <label class="form-check-label mt-2 font-weight-bold" for="FSearchCheck">
+                        Find B*
+                    </label>
+                </div>
+                
+            </div>
+
+            <div class="col">
+                <InputSelect @bind-Value="@filterDTO.searchStatus" class="form-control" id="FStatus">
+                    <option value="Select">--Select--</option>
+                    <option value="Initial">Initial</option>
+                    <option value="In Arbeit">In Arbeit</option>
+                    <option value="GS Er.">GS Er.</option>
+                    <option value="Kontrol">Kontrol</option>
+                    <option value="Einziehen">Einziehen</option>
+                    <option value="Fertig">Fertig</option>
+                </InputSelect>
+            </div>
+
+            <div class="col">
+                <button class="btn btn-sm font-weight-bold mt-1 px-5" type="button" @onclick="FilterList" style="background-color: gray; color: white; ">
+                    LOS
+                </button>
+            </div>
+        </div>
+
+    </EditForm>
+
+   
+
+    <div class="row">
+        <div class="col">
+            <button class="btn btn-sm my-2 my-sm-0 px-5" type="button" @onclick="SaveChanges" style="background-color: forestgreen; color: whitesmoke; ">
+                <MudIcon Icon="@Icons.Material.Filled.Save" Title="Add" Size="Size.Medium" />
+            </button>
+        </div>
+
+        <div class="col">
+            @if (saveMessage != "")
+            {
+                <p class="my-auto p-1 font-weight-bold" style="color:forestgreen; font-style:italic;">@saveMessage</p>
+            }
+            @if (saveErrorMessage != "")
+            {
+                <p class="my-auto p-1 font-weight-bold" style="color:red; font-style:italic;">@saveErrorMessage</p>
+            }
+        </div>
+    </div>
+   
+   
+
+
+
+    <button class="btn btn-sm my-2 my-sm-0 px-5" type="button" @onclick="NeuReklamation" style="background-color: #563d7c; color: #ffe484; ">
+        <MudIcon Icon="@Icons.Material.Filled.Add" Title="Add" Size="Size.Medium" />
+    </button>
+
+</nav>
+
+@if (Reklamations is null)
+{
+
+
+}
+else
+{
+
+    <div class="wrapper">
+        <table class="table table-hover table-striped mytable">
+            <thead class="font-weight-bolder">
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Rek_ID</th>
+                    <th scope="col">Mandant</th>
+                    <th scope="col">Web ID</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Vorgangsno</th>
+                    <th scope="col">Kundenno</th>
+                    <th scope="col">Kundenname</th>
+                    <th scope="col">A.Jahr</th>
+                    <th scope="col">Auftragsno</th>
+                    <th scope="col">L.Jahr</th>
+                    <th scope="col">Lieferschein</th>
+                    <th scope="col">Referenznummer</th>
+                    <th scope="col">Belegdatum</th>
+                    <th scope="col">RekSysDat</th>
+                    <th scope="col">Stornorechnungs</th>
+                    <th scope="col">RVE Stornorechnung</th>
+                    <th scope="col">RVE Nummer</th>
+                    <th scope="col">Auftragsstorno</th>
+                    <th scope="col">Rücklieferschein</th>
+                    <th scope="col">RVE Auftragsstorno</th>
+                    <th scope="col">RVE Rücklieferschein</th>
+                </tr>
+            </thead>
+            <tbody>
+                <Virtualize Items="FilteredData ?? Reklamations" Context="reklamation">
+
+                    <tr class="@(reklamation==selectedRow ? "selectedRow" : "")" @onclick="(()=> OnClickHandler(reklamation))">
+                        <td scope="row">@(Reklamations.IndexOf(reklamation)+1)</td>
+                        <td>@reklamation.Rek_ID</td>
+                        <td>@reklamation.Mandant</td>
+                        <td>@reklamation.Web_ID</td>
+                        <td>@reklamation.Status</td>
+                        <td>@reklamation.Vorgangsnummer</td>
+                        <td>@reklamation.Kundennummer</td>
+                        <td>@reklamation.Kundenname</td>
+                        <td>@reklamation.AuftragsJahr</td>
+                        <td>@reklamation.Auftragsnummer</td>
+                        <td>@reklamation.LieferscheinJahr</td>
+                        <td>@reklamation.Lieferscheinnummer</td>
+                        <td>@reklamation.Referenznummer</td>
+                        <td>@reklamation.Belegdatum?.ToString("dd/MM/yyyy")</td>
+                        <td>@reklamation.ReklamationsSystemDatum?.ToString("dd/MM/yyyy")</td>
+                        <td>@reklamation.Stornorechnungsnummer</td>
+                        <td>@reklamation.RVEStornorechnung</td>
+                        <td>@reklamation.RVENummer</td>
+                        <td>@reklamation.AB_StornoBelNum</td>
+                        <td>@reklamation.LF_RuckBelNum</td>
+                        <td>@reklamation.RVEAB_StornoBelNum</td>
+                        <td>@reklamation.RVELF_RuckBelNum</td>
+                    </tr>
+
+                </Virtualize>
+
+            </tbody>
+        </table>
+    </div>
+
+}
+
+
+@code {
+    [Parameter]
+    public List<KTrkl_Reklamation> Reklamations { get; set; }
+    [Parameter]
+    public EventCallback<KTrkl_Reklamation> OnClick { get; set; }
+    [Parameter]
+    public EventCallback<bool> eNeuReklamation { get; set; }
+    [Parameter]
+    public EventCallback<bool> eGoToReport { get; set; }
+    [Parameter]
+    public EventCallback<bool> eSaveChanges { get; set; }
+    [Parameter]
+    public string username { get; set; }
+    [Parameter]
+    public string saveMessage { get; set; }
+    [Parameter]
+    public string saveErrorMessage { get; set; }
+    public KTrkl_Reklamation selectedRow { get; set; }
+    public List<KTrkl_Reklamation> FilteredData { get; set; }
+    string searchStatus = "Find";
+
+    FilterListDTO filterDTO = new FilterListDTO();
+
+    protected override void OnParametersSet()
+    {
+        if (selectedRow == null)
+        {
+            selectedRow = Reklamations.FirstOrDefault();
+        }
+
+    }
+    async Task OnClickHandler(KTrkl_Reklamation reklamation)
+    {
+        selectedRow = reklamation;
+        await OnClick.InvokeAsync(reklamation);
+    }
+    async Task NeuReklamation()
+    {
+        await SaveChanges();
+
+        await eNeuReklamation.InvokeAsync(true);
+    }
+    async Task SaveChanges()
+    {
+        await eSaveChanges.InvokeAsync(true);
+    }
+    async Task GoToReport()
+    {
+        await SaveChanges();
+        await eGoToReport.InvokeAsync(true);
+    }
+    async Task ResetList()
+    {
+        await SaveChanges();
+
+        FilteredData = null;
+        filterDTO.searchStatus = null;
+        filterDTO.isStored = false;
+        filterDTO.searchTerm = null;
+    }
+    async Task FilterList()
+    {
+        await SaveChanges();
+
+        FilteredData = null;
+
+        if (filterDTO.isStored)
+        {
+            FilteredData = Reklamations.Where(r => r.RVENummer == "B*" || r.Stornorechnungsnummer == "B*" || r.RVEStornorechnung == "B*").ToList();
+
+        }
+        if (filterDTO.searchStatus!=null)
+        {
+            if (FilteredData != null)
+            {
+                FilteredData = FilteredData.Where(r => r.Status == filterDTO.searchStatus).ToList();
+            }
+            else
+            {
+                FilteredData = Reklamations.Where(r => r.Status == filterDTO.searchStatus).ToList();
+            }
+        }
+
+        if (filterDTO.searchTerm != null)
+        {
+
+            if (FilteredData != null)
+            {
+                FilteredData = FilteredData.Where(r => r.Rek_ID.ToString() == filterDTO.searchTerm ||
+      r.Mandant.ToString() == filterDTO.searchTerm ||
+      string.Equals(r.Status, filterDTO.searchTerm, StringComparison.OrdinalIgnoreCase) ||
+      r.Vorgangsnummer.ToString() == filterDTO.searchTerm ||
+      r.Kundennummer.Contains(filterDTO.searchTerm, StringComparison.OrdinalIgnoreCase) ||
+      r.Kundenname.Contains(filterDTO.searchTerm, StringComparison.OrdinalIgnoreCase) ||
+      r.AuftragsJahr.ToString() == filterDTO.searchTerm ||
+      r.Auftragsnummer.ToString() == filterDTO.searchTerm ||
+      r.LieferscheinJahr.ToString() == filterDTO.searchTerm ||
+      r.Lieferscheinnummer.ToString() == filterDTO.searchTerm ||
+      (r.Referenznummer != null && r.Referenznummer.Contains(filterDTO.searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+      r.Belegdatum?.ToString("dd/MM/yyyy") == filterDTO.searchTerm ||
+      r.ReklamationsSystemDatum?.ToString("dd/MM/yyyy") == filterDTO.searchTerm ||
+      r.Stornorechnungsnummer == filterDTO.searchTerm ||
+      r.RVEStornorechnung == filterDTO.searchTerm ||
+      r.RVENummer == filterDTO.searchTerm ||
+      r.AB_StornoBelNum == filterDTO.searchTerm ||
+      r.RVELF_RuckBelNum == filterDTO.searchTerm ||
+      r.RVEAB_StornoBelNum == filterDTO.searchTerm ||
+      r.RVELF_RuckBelNum == filterDTO.searchTerm ||
+      r.Positionens.Any(p=>p.Artikelnummer==filterDTO.searchTerm)
+ ).ToList();
+            }
+            else
+            {
+                FilteredData = Reklamations.Where(r => r.Rek_ID.ToString() == filterDTO.searchTerm ||
+      r.Mandant.ToString() == filterDTO.searchTerm ||
+      string.Equals(r.Status, filterDTO.searchTerm, StringComparison.OrdinalIgnoreCase) ||
+      r.Vorgangsnummer.ToString() == filterDTO.searchTerm ||
+      r.Kundennummer.Contains(filterDTO.searchTerm, StringComparison.OrdinalIgnoreCase) ||
+      r.Kundenname.Contains(filterDTO.searchTerm, StringComparison.OrdinalIgnoreCase) ||
+      r.AuftragsJahr.ToString() == filterDTO.searchTerm ||
+      r.Auftragsnummer.ToString() == filterDTO.searchTerm ||
+      r.LieferscheinJahr.ToString() == filterDTO.searchTerm ||
+      r.Lieferscheinnummer.ToString() == filterDTO.searchTerm ||
+      (r.Referenznummer != null && r.Referenznummer.Contains(filterDTO.searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+      r.Belegdatum?.ToString("dd/MM/yyyy") == filterDTO.searchTerm ||
+      r.ReklamationsSystemDatum?.ToString("dd/MM/yyyy") == filterDTO.searchTerm ||
+      r.Stornorechnungsnummer == filterDTO.searchTerm ||
+      r.RVEStornorechnung == filterDTO.searchTerm ||
+      r.RVENummer == filterDTO.searchTerm ||
+      r.AB_StornoBelNum == filterDTO.searchTerm ||
+      r.RVELF_RuckBelNum == filterDTO.searchTerm ||
+      r.RVEAB_StornoBelNum == filterDTO.searchTerm ||
+      r.RVELF_RuckBelNum == filterDTO.searchTerm ||
+      r.Positionens.Any(p => p.Artikelnummer == filterDTO.searchTerm)
+ ).ToList();
+            }
+        }
+    }
+}

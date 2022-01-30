@@ -1,0 +1,765 @@
+﻿@using System.IO
+@using Reklamation.Data
+@using Serilog
+@using System.Net
+@using System.Text
+@using Microsoft.Extensions.Configuration
+@inject IWebHostEnvironment enviroment
+@inject IReklamationRepository repository
+@inject IJSRuntime JSRuntime
+@inject NavigationManager MyNavigationManager
+@inject IConfiguration _configuration
+
+
+@if (KTrkl_Reklamation == null || !ready)
+{
+
+
+}
+else
+{
+    <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6" Color="@Color.Tertiary" Style="min-height:40vh;">
+        <MudTabPanel Text="Form" @onclick="TabClicked">
+
+            <EditForm Model="@KTrkl_Reklamation">
+                <div class="row">
+                    <div class="col-4 formborder">
+
+                        <div class="form-group row m-0">
+                            <label for="rekID" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">ID</label>
+                            <div class="col-sm-7">
+                                <InputNumber @bind-Value="@KTrkl_Reklamation.Rek_ID" class="form-control form-control-sm" id="rekID" readonly />
+                            </div>
+                        </div>
+
+                        <div class="form-group row m-0">
+                            <label for="Vorgangsnummer" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">Vorgangsnummer</label>
+                            <div class="col-sm-7">
+                                <InputNumber @bind-Value="@KTrkl_Reklamation.Vorgangsnummer" class="form-control form-control-sm" id="Vorgangsnummer" readonly />
+                            </div>
+                        </div>
+
+                        <div class="form-group row m-0">
+                            <label for="Auftragsnummer" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">Auftragsnummer</label>
+                            <div class="col-sm-7">
+                                <InputNumber @bind-Value="@KTrkl_Reklamation.Auftragsnummer" class="form-control form-control-sm" id="Auftragsnummer" readonly />
+                            </div>
+                        </div>
+
+                        <div class="form-group row m-0">
+                            <label for="Lieferscheinnummer" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">Lieferscheinnummer</label>
+                            <div class="col-sm-7">
+                                <InputNumber @bind-Value="@KTrkl_Reklamation.Lieferscheinnummer" class="form-control form-control-sm" id="Lieferscheinnummer" readonly />
+                            </div>
+                        </div>
+
+                        <div class="form-group row m-0">
+                            <label for="Referenznummer" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">Referenznummer</label>
+                            <div class="col-sm-7">
+                                <InputText @bind-Value="@KTrkl_Reklamation.Referenznummer" class="form-control form-control-sm" id="Referenznummer" readonly />
+                            </div>
+                        </div>
+
+                        <div class="form-group row m-0">
+                            <label for="Belegdatum" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">Belegdatum</label>
+                            <div class="col-sm-7">
+                                <InputDate @bind-Value="@KTrkl_Reklamation.Belegdatum" class="form-control form-control-sm" id="Belegdatum" readonly />
+                            </div>
+                        </div>
+
+                        <div class="form-group row m-0">
+                            <label for="Kundennummer" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">Kundennummer</label>
+                            <div class="col-sm-7">
+                                <InputText @bind-Value="@KTrkl_Reklamation.Kundennummer" class="form-control form-control-sm" id="Kundennummer" readonly />
+                            </div>
+                        </div>
+
+                        <div class="form-group row m-0">
+                            <label for="Kundenname" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">Kundenname</label>
+                            <div class="col-sm-7">
+                                <InputText @bind-Value="@KTrkl_Reklamation.Kundenname" class="form-control form-control-sm" id="Kundenname" readonly />
+                            </div>
+                        </div>
+
+                        <div class="form-group row m-0">
+                            <label for="ReklamationsSystemDatum" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">ReklamationsSystemDatum</label>
+                            <div class="col-sm-7">
+                                <InputDate @bind-Value="@KTrkl_Reklamation.ReklamationsSystemDatum" class="form-control form-control-sm" id="ReklamationsSystemDatum" readonly />
+                            </div>
+                        </div>
+
+                        <div class="form-group row m-0">
+                            <label for="Status" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">Status</label>
+                            <div class="col-sm-7">
+
+                                <InputSelect @bind-Value="@KTrkl_Reklamation.Status" class="form-control form-control-sm" id="Status">
+                                    <option value=@DBNull.Value>--Select--</option>
+                                    <option value="Initial">Initial</option>
+                                    <option value="In Arbeit">In Arbeit</option>
+                                    <option value="GS Er.">GS Er.</option>
+                                    <option value="Kontrol">Kontrol</option>
+                                    <option value="Einziehen">Einziehen</option>
+                                    <option value="Fertig">Fertig</option>
+                                    <option value="Löschen">---Löschen---</option>
+                                </InputSelect>
+                            </div>
+                        </div>
+
+                        <div class="form-group row m-0">
+                            <label for="ReklamationsKundeDatum" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">ReklamationsKundeDatum</label>
+                            <div class="col-sm-7">
+                                <InputDate @bind-Value="@KTrkl_Reklamation.ReklamationsKundeDatum" class="form-control form-control-sm" id="ReklamationsKundeDatum" />
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="col-3 formborder mr-0">
+
+                        <div class="form-group row m-0">
+                            <label for="RVENummer" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">RVENummer</label>
+                            <div class="col-sm-7">
+                                <InputText @bind-Value="@KTrkl_Reklamation.RVENummer" class="form-control form-control-sm" id="RVENummer" />
+                            </div>
+                        </div>
+
+                        <div class="form-group row m-0">
+                            <label for="GutschriftNummer" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">GutschriftNummer</label>
+                            <div class="col-sm-7">
+                                <InputText @bind-Value="@KTrkl_Reklamation.GutschriftNummer" class="form-control form-control-sm" id="GutschriftNummer" />
+                            </div>
+                        </div>
+
+
+                        <div class="form-group row m-0">
+                            <label for="Stornorechnungsnummer" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">Stornorechnungsnummer</label>
+                            <div class="col-sm-7">
+                                <InputText @bind-Value="@KTrkl_Reklamation.Stornorechnungsnummer" class="form-control form-control-sm" id="Stornorechnungsnummer" />
+                            </div>
+                        </div>
+
+                        <div class="form-group row m-0">
+                            <label for="RVEStornorechnung" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">RVEStornorechnung</label>
+                            <div class="col-sm-7">
+                                <InputText @bind-Value="@KTrkl_Reklamation.RVEStornorechnung" class="form-control form-control-sm" id="RVEStornorechnung" />
+                            </div>
+                        </div>
+
+                        <div class="form-group row m-0">
+                            <label for="Ablehnungsdatum" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">Ablehnungsdatum</label>
+                            <div class="col-sm-7">
+                                <InputDate @bind-Value="@KTrkl_Reklamation.Ablehnungsdatum" class="form-control form-control-sm" id="Ablehnungsdatum" />
+                            </div>
+                        </div>
+
+                        <div class="form-group row m-0">
+                            <label for="AbholeFirma" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">AbholeFirma</label>
+                            <div class="col-sm-7">
+                                <InputText @bind-Value="@KTrkl_Reklamation.AbholeFirma" class="form-control form-control-sm" id="AbholeFirma" />
+                            </div>
+                        </div>
+
+                        <div class="form-group row m-0">
+                            <label for="Abholenummer" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">Abholenummer</label>
+                            <div class="col-sm-7">
+
+                                <InputTextArea @bind-Value="@KTrkl_Reklamation.Abholenummer" class="form-control form-control-sm" id="Abholenummer" />
+                            </div>
+                        </div>
+
+                        <div class="form-group row m-0">
+                            <label for="Abholetermin" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">Abholetermin</label>
+                            <div class="col-sm-7">
+                                <InputDate @bind-Value="@KTrkl_Reklamation.Abholetermin" class="form-control form-control-sm" id="Abholetermin" />
+                            </div>
+                        </div>
+
+
+                        <div class="form-group row m-0">
+                            <label for="Versandkosten" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">Versandkosten</label>
+                            <div class="col-sm-7">
+                                <InputNumber @bind-Value="@KTrkl_Reklamation.Versandkosten" class="form-control form-control-sm" id="Versandkosten" />
+                            </div>
+                        </div>
+
+                        <div class="form-group row m-0">
+                            <label for="WiedereinlagerungGebühr" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">WiedereinlagerungGebühr</label>
+                            <div class="col-sm-7">
+                                <InputNumber @bind-Value="@KTrkl_Reklamation.WiedereinlagerungGebühr" class="form-control form-control-sm" id="WiedereinlagerungGebühr" />
+                            </div>
+                        </div>
+
+
+                    </div>
+                    <div class="col-3">
+
+                        <div class="form-group row m-0">
+                            <label for="AB_StornoBelNum" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">Auftragsstorno</label>
+                            <div class="col-sm-7">
+                                <InputText @bind-Value="@KTrkl_Reklamation.AB_StornoBelNum" class="form-control form-control-sm" id="AB_StornoBelNum" />
+                            </div>
+                        </div>
+
+                        <div class="form-group row m-0">
+                            <label for="LF_RuckBelNum" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">Rücklieferschein</label>
+                            <div class="col-sm-7">
+                                <InputText @bind-Value="@KTrkl_Reklamation.LF_RuckBelNum" class="form-control form-control-sm" id="LF_RuckBelNum" />
+                            </div>
+                        </div>
+
+                        <div class="form-group row m-0">
+                            <label for="RVEAB_StornoBelNum" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">RVE Auftragsstorno</label>
+                            <div class="col-sm-7">
+                                <InputText @bind-Value="@KTrkl_Reklamation.RVEAB_StornoBelNum" class="form-control form-control-sm" id="RVEAB_StornoBelNum" />
+                            </div>
+                        </div>
+
+                        <div class="form-group row m-0">
+                            <label for="RVELF_RuckBelNum" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">RVE Rücklieferschein</label>
+                            <div class="col-sm-7">
+                                <InputText @bind-Value="@KTrkl_Reklamation.RVELF_RuckBelNum" class="form-control form-control-sm" id="RVELF_RuckBelNum" />
+                            </div>
+                        </div>
+
+                        <div class="form-group row m-0">
+                            <label for="Ersteller" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">Ersteller</label>
+                            <div class="col-sm-7">
+                                <InputText @bind-Value="@KTrkl_Reklamation.Ersteller" class="form-control form-control-sm" id="Ersteller" readonly />
+                            </div>
+                        </div>
+
+                        <div class="form-group row m-0">
+                            <label for="Erstelldatum" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">Erstelldatum</label>
+                            <div class="col-sm-7">
+                                <InputDate @bind-Value="@KTrkl_Reklamation.Erstelldatum" class="form-control form-control-sm" id="Erstelldatum" readonly />
+                            </div>
+                        </div>
+
+                        <div class="form-group row m-0">
+                            <label for="Updater" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">Updater</label>
+                            <div class="col-sm-7">
+                                <InputText @bind-Value="@KTrkl_Reklamation.Updater" class="form-control form-control-sm" id="Updater" readonly />
+                            </div>
+                        </div>
+
+                        <div class="form-group row m-0">
+                            <label for="Updatedatum" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">Updatedatum</label>
+                            <div class="col-sm-7">
+                                <InputDate @bind-Value="@KTrkl_Reklamation.Updatedatum" class="form-control form-control-sm" id="Updatedatum" readonly />
+                            </div>
+                        </div>
+
+                        <div class="form-group row m-1">
+                            <label for="WeitereNotizen" class="col-sm-5 col-form-label col-form-label-sm font-weight-bold">WeitereNotizen</label>
+                            <div class="col-sm-7">
+                                <InputTextArea @bind-Value="@KTrkl_Reklamation.WeitereNotizen" class="form-control form-control-sm" id="WeitereNotizen" />
+                            </div>
+                        </div>
+
+
+                    </div>
+
+                    <div class="col-1 ml-5" style="border-left:solid;">
+                        <div class="row mt-3">
+                            <div class="col text-right">
+                                <button type="button" class="btn px-3" style="background-color: #ff9933; border-radius: 8px; font-weight: bold; font-size: 85%; min-width: 130px; "
+                                        @onclick="@(() => CheckStorno801(KTrkl_Reklamation))" disabled="@(KTrkl_Reklamation.Stornorechnungsnummer=="B*")">
+                                    Stornorechnung<br />STR(801)
+                                </button>
+                            </div>
+                        </div>
+                        <br />
+                        <div class="row">
+                            <div class="col text-right">
+                                <button type="button" class="btn px-3" style="background-color: #2596be; border-radius: 8px; font-weight: bold; color: white; font-size: 85%; min-width: 130px; "
+                                        @onclick="@(() => CheckRVS802(KTrkl_Reklamation))" disabled="@(KTrkl_Reklamation.RVEStornorechnung=="B*")">
+                                    Stornorechnung<br />RVS(802)
+                                </button>
+                            </div>
+                        </div>
+                        <br />
+                        <div class="row">
+                            <div class="col text-right">
+                                <button type="button" class="btn px-3" style="background-color: #0e282e; border-radius: 8px; font-weight: bold; color: white; font-size: 85%; min-width:130px;"
+                                        @onclick="@(() => Auf803(KTrkl_Reklamation))" disabled="@(KTrkl_Reklamation.RVENummer=="B*")">
+                                    Auftrag<br />RVE(803)
+                                </button>
+
+
+                            </div>
+                        </div>
+
+                        @if (storedMessage != "")
+                        {
+                            <div class="row">
+                                <div class="col text-right">
+                                    <div class="alert alert-danger" role="alert">
+                                        @storedMessage
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <hr style="border-top:1px solid; " />
+
+                        <div class="row">
+                            <button type="button" @onclick="@(() => openDeleteArtikelModal())"
+                                    class="btn btn-danger ml-4 py-1 px-5" style="position:absolute; bottom:10px; font-weight:bolder" disabled="@(KTrkl_Reklamation.Status!="Löschen")">
+                                LÖSCHEN
+                            </button>
+                        </div>
+
+
+                    </div>
+                </div>
+
+
+
+            </EditForm>
+        </MudTabPanel>
+
+        <MudTabPanel Text="Bilder">
+            <div class="row">
+                <div class="col-5 mt-4">
+                    <form @onsubmit="OnSubmitBild">
+                        <InputFile OnChange="OnInputFileChange" multiple />
+                        <br /><br />
+                        <button class="btn btn-info mt-2" type="submit">Upload</button>
+
+                        @if (bildErrorMessage != "")
+                        {
+                            <p style="display:inline-block;" class="ml-4">@bildErrorMessage</p>
+                        }
+
+                    </form>
+                </div>
+                <div class="col-6 wrapperbilder">
+                    <table class="table table-borderless">
+
+                        <tbody>
+
+                            @foreach (KTrkl_Bild bild in KTrkl_Reklamation.Bilds)
+                            {
+
+                                @if (KTrkl_Reklamation.Bilds.ToList().IndexOf(bild) % 3 == 0)
+                                {
+                                    @:<tr>
+                                    }
+
+                                <td class="imagetd">
+                                    <img src="@($"{MyNavigationManager.BaseUri}api/Bilder?Rek_ID={KTrkl_Reklamation.Rek_ID}&name={bild.Bild}")"
+                                         alt="Not found" class="reklamimage">
+                                    <span class="text-center mt-1" style="display:block;">
+                                        <button @onclick="@(() => openSelectedBild(bild))" type="button" class="btn btn-primary btn-xs p-1">
+                                            <MudIcon Icon="@Icons.Material.Filled.OpenInFull" Title="Open" Size="Size.Small" />
+                                        </button>
+                                        <button @onclick="@(() => openDeleteModal(bild))" type="button" class="btn btn-danger btn-xs p-1"><MudIcon Icon="@Icons.Material.Filled.Delete" Title="Delete" Size="Size.Small" /></button>
+                                    </span>
+
+                                </td>
+                                @if (KTrkl_Reklamation.Bilds.ToList().IndexOf(bild) % 3 == 2)
+                                {
+                                @:</tr>
+                            }
+
+                            }
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </MudTabPanel>
+
+        @if (KTrkl_Reklamation.Web_ID != null)
+        {
+            <MudTabPanel Text="@TabName" Style="@(KTrkl_Reklamation.UnReadMessages>0 ? "background-color:#ff3300; font-weight:bold;" : "")">
+                <div class="wrappermessages">
+                    @foreach (KTrkl_Message mes in WebMessages)
+                    {
+                        <div class="row mb-2 ml-1 mr-0">
+                            @if (mes.isRead == 0)
+                            {
+                                <div class="col-sm-1" style="max-width:50px;"><MudIcon Icon="@Icons.Material.Filled.MarkEmailUnread" Title="Unread" Size="Size.Small" Color="Color.Secondary" /></div>
+                            }
+                            else
+                            {
+                                <div class="col-sm-1"  style="max-width:50px;"><MudIcon Icon="@Icons.Material.Filled.MarkEmailRead" Title="Unread" Size="Size.Small" Color="Color.Success" /></div>
+                            }
+
+                            <div class="col-sm-2" style="font-weight:bold; font-size:90%;">@(mes.Datum.ToString("MM/dd/yyyy H:mm") +" - "+mes.MUSER)</div>
+                            <div class="col-sm-9" style="@(mes.MType=="K" ? "background-color:#FAEBD7;" : "background-color:#ffff99")">@mes.Message</div>
+                        </div>
+                    }
+                </div>
+
+                <EditForm Model="@NewMessageForm" OnValidSubmit="@HandleValidSubmitMessage" OnInvalidSubmit="HandleInvalidSubmitMessage">
+                    <DataAnnotationsValidator />
+                    <div class="form-group row">
+                        <div class="col-sm-7">
+                            <InputTextArea @bind-Value="@NewMessageForm.Message" class="form-control form-control-sm" id="newMessage" />
+                        </div>
+                        <div class="col-sm-1">
+                            <button type="submit" class="btn btn-success">Send</button>
+                        </div>
+                        <div class="col-sm-2">
+                            <ValidationSummary />
+                        </div>
+                        <div class="col-sm-2 text-right">
+                            <button type="button" class="btn btn-info" @onclick="MarkasRead" disabled="@isMarkingAsRead">Mark as Read</button>
+                        </div>
+
+                    </div>
+
+                </EditForm>
+
+            </MudTabPanel>
+
+        }
+
+    </MudTabs>
+
+    @if (showDeleteDialog)
+    {
+        <DeleteModal BildToDelete="BildToDelete" EDeleteBild="deleteSelectedBild" ECancelDelete="CancelDelete" />
+    }
+    @if (showDeleteReklamationDia)
+    {
+        <DeleteReklamationModal ECancelDelete="cancelReklamationDelete" EDeleteReklamation="LöschReklamation" />
+    }
+    @if (showStatusDialog)
+    {
+        <StatusDialog FehlerList="fehlerList" ECloseDialog="closeStatusDialog" />
+    }
+    @if (showKeineRechnungDialog)
+    {
+        <KeineRechnungDialog ECloseDialog="() => showKeineRechnungDialog = false" />
+    }
+    @if (isSendingMessage)
+    {
+        <ProgressDialog />
+    }
+    @if (showErrorMessage)
+    {
+        <ErrorMessageDialog messageToShow="@errorMessagetoShow" ECloseDialog="() => showErrorMessage = false" />
+    }
+}
+
+
+
+@code {
+    [Parameter]
+    public KTrkl_Reklamation KTrkl_Reklamation { get; set; }
+    [Parameter]
+    public EventCallback<IList<string>> ImageNameToOpen { get; set; }
+    [Parameter]
+    public EventCallback<bool> eSaveChanges { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> eUpdateUnreadCount { get; set; }
+    [Parameter]
+    public EventCallback<KTrkl_Reklamation> eDeleteReklamation { get; set; }
+    [Parameter]
+    public List<KTrkl_Message> AllMessages { get; set; }
+    [Parameter]
+    public string userName { get; set; }
+    public static readonly List<string> ImageExtensions = new List<string> { ".JPG", ".JPE", ".BMP", ".GIF", ".PNG", "JPEG" };
+    private List<KTrkl_Message> WebMessages { get; set; }
+    private bool ready = false;
+    private NewMessagetoKundeDTO NewMessageForm = new NewMessagetoKundeDTO();
+
+    private IReadOnlyList<IBrowserFile> selectedFiles;
+    private List<string> fehlerList { get; set; }
+    private KTrkl_Bild BildToDelete;
+    private ReklamationDTO reklamationDTO;
+    public string bildErrorMessage;
+    private string storedMessage = "";
+    private bool showDeleteDialog = false;
+    private bool showStatusDialog = false;
+    private string nullValue = null;
+    private bool showDeleteReklamationDia = false;
+    private bool showKeineRechnungDialog = false;
+    private string TabName { get; set; }
+    private bool isSendingMessage = false;
+    private bool showErrorMessage = false;
+    private string errorMessagetoShow;
+    private bool isMarkingAsRead = false;
+
+    protected override void OnParametersSet()
+    {
+        WebMessages = AllMessages.Where(x => x.Web_ID == KTrkl_Reklamation.Web_ID).ToList();
+        storedMessage = "";
+        TabName = $"Messages ({KTrkl_Reklamation.UnReadMessages})";
+        ready = true;
+    }
+    private void OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        selectedFiles = e.GetMultipleFiles();
+        bildErrorMessage = "";
+        this.StateHasChanged();
+    }
+    private async void OnSubmitBild()
+    {
+        if (selectedFiles is null)
+        {
+            bildErrorMessage = "Sie haben keine Bilder ausgewählt..";
+        }
+        if (selectedFiles is not null)
+        {
+            foreach (var file in selectedFiles)
+            {
+                if (ImageExtensions.Contains(Path.GetExtension(file.Name).ToUpperInvariant()))
+                {
+                    try
+                    {
+                        Stream stream = file.OpenReadStream(13145728);
+                        Stream streamBackUp = file.OpenReadStream(13145728);
+
+                        var randomFileName = System.Guid.NewGuid().ToString() + ".jpg";
+                        System.IO.Directory.CreateDirectory(ConstantValues.ImageSaveLocation + KTrkl_Reklamation.Rek_ID);
+                        FileStream bckUp = File.Create(ConstantValues.ImageSaveLocation + KTrkl_Reklamation.Rek_ID + @"\" + randomFileName);
+                        await stream.CopyToAsync(bckUp);
+
+                        stream.Close();
+                        bckUp.Close();
+
+                        KTrkl_Reklamation.Bilds.Add(new KTrkl_Bild { Bild = randomFileName, BildPath = KTrkl_Reklamation.Rek_ID + "/" + randomFileName });
+
+                        await eSaveChanges.InvokeAsync(true);
+
+                    }
+                    catch (Exception ex)
+                    {
+                        bildErrorMessage = "Fehler beim upload..";
+                        bildErrorMessage = bildErrorMessage + file.Name;
+                        Log.Error("File: {Filename} Error: {Error}", file.Name, ex.Message);
+                    }
+                }
+
+            }
+            selectedFiles = null;
+        }
+        this.StateHasChanged();
+    }
+    private async Task openSelectedBild(KTrkl_Bild BildtoOpen)
+    {
+        IList<string> source = KTrkl_Reklamation.Bilds.Select(b => $"{MyNavigationManager.BaseUri}api/Bilder?Rek_ID={KTrkl_Reklamation.Rek_ID}&name={b.Bild}").ToList();
+
+        var index = source.IndexOf($"{MyNavigationManager.BaseUri}api/Bilder?Rek_ID=" + KTrkl_Reklamation.Rek_ID + "&name=" + BildtoOpen.Bild);
+        var item = source.ElementAt(index);
+        source.RemoveAt(index);
+        source.Insert(0, item);
+        await ImageNameToOpen.InvokeAsync(source);
+    }
+    private void openDeleteModal(KTrkl_Bild bildToDelete)
+    {
+        BildToDelete = bildToDelete;
+        showDeleteDialog = true;
+    }
+    private void openDeleteArtikelModal()
+    {
+        if (KTrkl_Reklamation.Status == "Löschen")
+        {
+            showDeleteReklamationDia = true;
+        }
+
+    }
+    private void cancelReklamationDelete()
+    {
+        showDeleteReklamationDia = false;
+    }
+    private void CancelDelete()
+    {
+        showDeleteDialog = false;
+    }
+    private void closeStatusDialog()
+    {
+        showStatusDialog = false;
+        fehlerList = null;
+    }
+    private async Task deleteSelectedBild(KTrkl_Bild bildToDelete)
+    {
+        KTrkl_Reklamation.Bilds.Remove(bildToDelete);
+        await eSaveChanges.InvokeAsync(true);
+        File.Delete(ConstantValues.ImageSaveLocation + KTrkl_Reklamation.Rek_ID + @"\" + bildToDelete.Bild);
+        showDeleteDialog = false;
+    }
+    private void TabClicked()
+    {
+        bildErrorMessage = "";
+    }
+    private async Task Storno801(KTrkl_Reklamation reklamation)
+    {
+        try
+        {
+            await eSaveChanges.InvokeAsync(true);
+            await repository.StornoRechnung801(reklamation.Rek_ID);
+            reklamation.Stornorechnungsnummer = "B*";
+            await eSaveChanges.InvokeAsync(true);
+            //await repository.SaveChangesNoParam();
+        }
+        catch
+        {
+            storedMessage = "Fehler(stored procedure..)";
+        }
+    }
+    private async Task RVS802(KTrkl_Reklamation reklamation)
+    {
+        try
+        {
+            await eSaveChanges.InvokeAsync(true);
+            await repository.RVEStor802(reklamation.Rek_ID);
+            reklamation.RVEStornorechnung = "B*";
+            //await repository.SaveChangesNoParam();
+            await eSaveChanges.InvokeAsync(true);
+        }
+        catch
+        {
+            storedMessage = "Fehler(stored procedure..)";
+        }
+    }
+    private async Task Auf803(KTrkl_Reklamation reklamation)
+    {
+        try
+        {
+            await eSaveChanges.InvokeAsync(true);
+            await repository.RVEAuft803(reklamation.Rek_ID);
+            reklamation.RVENummer = "B*";
+            //await repository.SaveChangesNoParam();
+            await eSaveChanges.InvokeAsync(true);
+        }
+        catch
+        {
+            storedMessage = "Fehler(stored procedure..)";
+        }
+    }
+    private async Task CheckStorno801(KTrkl_Reklamation reklamation)
+    {
+        List<FunctionCheckDTO> checkList = await repository.CheckFunctionContinue(reklamation.Vorgangsnummer ?? 0);
+        FunctionCheckDTO check = checkList.FirstOrDefault();
+
+        if (check != null && check.CheckCount > 0)
+        {
+            await Storno801(reklamation);
+        }
+        else
+        {
+            showKeineRechnungDialog = true;
+        }
+    }
+    private async Task CheckRVS802(KTrkl_Reklamation reklamation)
+    {
+        List<FunctionCheckDTO> checkList = await repository.CheckFunctionContinue(reklamation.Vorgangsnummer ?? 0);
+        FunctionCheckDTO check = checkList.FirstOrDefault();
+
+        if (check != null && check.CheckCount > 0)
+        {
+            await RVS802(reklamation);
+        }
+        else
+        {
+            showKeineRechnungDialog = true;
+        }
+    }
+    private async Task LöschReklamation()
+    {
+        if (KTrkl_Reklamation.Status == "Löschen")
+        {
+            await eDeleteReklamation.InvokeAsync(KTrkl_Reklamation);
+        }
+        showDeleteReklamationDia = false;
+    }
+    private async Task HandleValidSubmitMessage()
+    {
+        isSendingMessage = true;
+
+        //Send Message to Server
+        MessagePostDto messagePost = new MessagePostDto();
+        messagePost.Web_ID = (int)KTrkl_Reklamation.Web_ID;
+        messagePost.Datum = DateTime.Now;
+        messagePost.MUser = userName;
+        messagePost.Message = NewMessageForm.Message;
+        messagePost.Kundenname = KTrkl_Reklamation.Kundenname;
+        messagePost.Email = "metedam2@gmail.com";
+        var answer = await SendMessageToServer(messagePost);
+
+
+        //Add Message to Database if web call is successful
+        if (answer.IsSuccessStatusCode)
+        {
+            KTrkl_Message messageToSend = new KTrkl_Message();
+            messageToSend.Web_ID = (int)KTrkl_Reklamation.Web_ID;
+            messageToSend.Datum = DateTime.Now;
+            messageToSend.MUSER = userName;
+            messageToSend.MType = "F";
+            messageToSend.Message = NewMessageForm.Message;
+            messageToSend.isRead = 1;
+
+            try
+            {
+                await repository.SaveNewMessage(messageToSend);
+                AllMessages.Add(messageToSend);
+                WebMessages = AllMessages.Where(x => x.Web_ID == KTrkl_Reklamation.Web_ID).ToList();
+            }
+            catch (Exception ex)
+            {
+                errorMessagetoShow = "Web Call Error";
+                showErrorMessage = true;
+                Log.Error(ex.Message);
+            }
+
+        }
+        else
+        {
+            errorMessagetoShow = "Web Call Error: " + answer.StatusCode.ToString();
+            showErrorMessage = true;
+            Log.Error(answer.StatusCode.ToString());
+        }
+
+        ResetMessageForm();
+
+        isSendingMessage = false;
+    }
+    private async Task<HttpResponseMessage> SendMessageToServer(MessagePostDto messagePost)
+    {
+        //var credCache = new CredentialCache();
+        //credCache.Add(new Uri("http://t-api.berlintires.eu/dw/request/api_154/CreateReklamationMessageToB2B"), "Digest", new NetworkCredential("Rekla", "!berliN_19%20"));
+        //var httpClient = new HttpClient(new HttpClientHandler { Credentials = credCache });
+        //var body = Newtonsoft.Json.JsonConvert.SerializeObject(messagePost);
+        //var data = new StringContent(body, Encoding.UTF8, "application/json");
+        //var answer = await httpClient.PostAsync("http://t-api.berlintires.eu/dw/request/api_154/CreateReklamationMessageToB2B", data);
+        //return answer.IsSuccessStatusCode;
+
+        var dUser = _configuration["DigestAuth:UserName"];
+        var dPassword = _configuration["DigestAuth:Password"];
+        var credentials = new NetworkCredential(dUser, dPassword);
+        var handler = new HttpClientHandler { Credentials = credentials };
+        using (var httpClient = new HttpClient(handler))
+        {
+            var body = Newtonsoft.Json.JsonConvert.SerializeObject(messagePost);
+            var data = new StringContent(body, Encoding.UTF8, "application/json");
+            var answer = await httpClient.PostAsync("http://t-api.berlintires.eu/dw/request/api_154/CreateReklamationMessageToB2B", data);
+            return answer;
+        }
+
+    }
+    private void HandleInvalidSubmitMessage()
+    {
+        Log.Error("In Handle InvalidSubmitMessage");
+    }
+    private void ResetMessageForm()
+    {
+        NewMessageForm.Message = null;
+    }
+    private async Task MarkasRead()
+    {
+        isMarkingAsRead = true;
+        foreach (KTrkl_Message message in WebMessages)
+        {
+            message.isRead = 1;
+        }
+        await repository.UpdateUnReadMessages(WebMessages);
+        await eUpdateUnreadCount.InvokeAsync(true);
+
+        isMarkingAsRead = false;
+    }
+
+}

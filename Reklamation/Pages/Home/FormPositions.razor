@@ -1,0 +1,466 @@
+﻿@using Microsoft.Extensions.Logging
+@using Reklamation.Data
+@using Serilog
+@inject IReklamationRepository repository
+
+@if (KTrkl_Reklamation is null || Grunds is null)
+{
+
+}
+else
+{
+    <div class="positionform p-2">
+        <EditForm Model="@KTrkl_Reklamation">
+            @if (reifenCount != 0)
+            {
+                <table class="table formtable">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>Menge</th>
+                            <th>ArtGruppe</th>
+                            <th>Artikelnummer</th>
+                            <th>GdKunde</th>
+                            <th>GdUnserer</th>
+                            <th>HatKundeRecht</th>
+                            <th>Bemerkung</th>
+                            <th>Automarke</th>
+                            <th>Modellbezeichnung</th>
+                            <th>Achse</th>
+                            <th>KMGefahren</th>
+                            <th>PrFehler</th>
+                            <th>ErgebnisWare</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (KTrkl_Positionen position in KTrkl_Reklamation.Positionens)
+                        {
+                            @if (position.ArtGruppe != null && position.ArtGruppe.Equals("REIFEN"))
+                            {
+                                <tr>
+                                    <td>
+                                        <button @onclick="(()=> navigateToAdd(position))" type="button" class="btn btn-sm btn-outline-success p-0 m-0">
+                                            <MudIcon Icon="@Icons.Material.Filled.Add" Title="Add" />
+                                        </button>
+                                    </td>
+                                    <td>
+                                        <InputNumber @bind-Value="@position.Menge" class="form-control form-control-sm" id="Menge" readonly />
+                                    </td>
+                                    <td>
+                                        <InputText @bind-Value="@position.ArtGruppe" class="form-control form-control-sm" id="ArtGruppe" readonly style="min-width:75px;" />
+                                    </td>
+                                    <td>
+                                        <InputText @bind-Value="@position.Artikelnummer" class="form-control form-control-sm" id="Artikelnummer" style="min-width:170px" readonly />
+                                    </td>
+
+                                    <td>
+                                        <InputSelect @bind-Value="@position.GrundK_ID" class="form-control form-control-sm" id="GrundKunde" style="min-width:165px;">
+                                            <option value=@DBNull.Value>--Select--</option>
+                                            @foreach (KTrkl_TxtGrund g in Grunds)
+                                                            {
+                                                @if (g.ArtGruppe.Equals("REIFEN"))
+                                                                {
+                                                    <option value="@g.Grund_ID">@g.Grund</option>
+                                                                }
+                                                            }
+                                        </InputSelect>
+                                    </td>
+
+                                    <td>
+                                        <InputSelect @bind-Value="@position.GrundU_ID" class="form-control form-control-sm" id="GrundUnserer" style="min-width:165px;">
+                                            <option value=@DBNull.Value>--Select--</option>
+                                            @foreach (KTrkl_TxtGrund g in Grunds)
+                                                            {
+                                                @if (g.ArtGruppe.Equals("REIFEN"))
+                                                                {
+                                                    <option value="@g.Grund_ID">@g.Grund</option>
+                                                                }
+                                                            }
+                                        </InputSelect>
+                                    </td>
+
+                                    <td>
+                                        <InputSelect @bind-Value="@position.HatKundeRecht" class="form-control form-control-sm" id="HatKundeRecht">
+                                            <option value=@DBNull.Value>--Select--</option>
+                                            <option value="Ja">Ja</option>
+                                            <option value="Nein">Nein</option>
+                                        </InputSelect>
+                                    </td>
+
+                                    @if (KTrkl_Reklamation.Web_ID == null)
+                                    {
+                                        <td>
+                                            <InputText @bind-Value="@position.Bemerkung" class="form-control form-control-sm" id="Bemerkung" />
+                                        </td>
+                                    }
+                                    else
+                                    {
+                                        <td @onclick="(() => OpenBemerkungTextModal(position.Bemerkung))">
+                                            <InputText @bind-Value="@position.Bemerkung" class="form-control form-control-sm" id="Bemerkung" readonly />
+                                        </td>
+                                    }
+
+
+                                    <td>
+                                        <InputText @bind-Value="@position.SerialNoSerienNr" class="form-control form-control-sm" id="SerialNoSerienNr" style="min-width:150px;" />
+                                    </td>
+                                    <td>
+                                        <InputText @bind-Value="@position.DotWocheJahr" class="form-control form-control-sm" id="DotWocheJahr" />
+                                    </td>
+                                    <td>
+                                        <InputText @bind-Value="@position.RestProfiltiefe" class="form-control form-control-sm" id="RestProfiltiefe" />
+                                    </td>
+                                    <td>
+                                        <InputNumber @bind-Value="@position.KMGefahren" class="form-control form-control-sm" id="KMGefahren" />
+                                    </td>
+                                    <td>
+                                        <InputCheckbox @bind-Value="@position.isProFehler" class="form-control form-control-sm" id="PrFehlerC" />
+                                    </td>
+
+                                    <td>
+                                        <InputSelect @bind-Value="@position.ErgebnisWare" class="form-control form-control-sm" id="ErgebnisWare">
+                                            <option value=@DBNull.Value>--Select--</option>
+                                            <option value="WE">WE</option>
+                                            <option value="ASK">ASK</option>
+                                        </InputSelect>
+                                    </td>
+
+                                    <td>
+                                        <button @onclick="@(() => openDeleteModal(position))" type="button" class="btn btn-sm btn-outline-danger p-0 m-0">
+                                            <MudIcon Icon="@Icons.Material.Filled.Delete" Title="Delete" />
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            }
+
+            @if (felgenCount != 0)
+            {
+                <table class="table formtable">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>Menge</th>
+                            <th>ArtGruppe</th>
+                            <th>Artikelnummer</th>
+                            <th>GdKunde</th>
+                            <th>GdUnserer</th>
+                            <th>HatKundeRecht</th>
+                            <th>Bemerkung</th>
+                            <th>Automarke</th>
+                            <th>Modellbezeichnung</th>
+                            <th>Achse</th>
+                            <th>PrFehler</th>
+                            <th>ErgebnisWare</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (KTrkl_Positionen position in KTrkl_Reklamation.Positionens)
+                        {
+                            @if (position.ArtGruppe != null && (position.ArtGruppe.Equals("FELGEN") || position.ArtGruppe.Equals("ALU")))
+                            {
+                                <tr>
+                                    <td>
+                                        <button @onclick="(()=> navigateToAdd(position))" type="button" class="btn btn-sm btn-outline-success p-0 m-0">
+                                            <MudIcon Icon="@Icons.Material.Filled.Add" Title="Add" />
+                                        </button>
+                                    </td>
+                                    <td>
+                                        <InputNumber @bind-Value="@position.Menge" class="form-control form-control-sm" id="Menge" readonly />
+                                    </td>
+                                    <td>
+                                        <InputText @bind-Value="@position.ArtGruppe" class="form-control form-control-sm" id="ArtGruppe" readonly style="min-width:80px;" />
+                                    </td>
+                                    <td>
+                                        <InputText @bind-Value="@position.Artikelnummer" class="form-control form-control-sm" id="Artikelnummer" style="min-width:170px;" readonly />
+                                    </td>
+
+                                    <td>
+                                        <InputSelect @bind-Value="@position.GrundK_ID" class="form-control form-control-sm" id="GrundKunde" style="min-width:165px;">
+                                            <option value=@DBNull.Value>--Select--</option>
+                                            @foreach (KTrkl_TxtGrund g in Grunds)
+                                                            {
+                                                @if (g.ArtGruppe.Equals("FELGEN"))
+                                                                {
+                                                    <option value="@g.Grund_ID">@g.Grund</option>
+                                                                }
+                                                            }
+                                        </InputSelect>
+                                    </td>
+
+                                    <td>
+                                        <InputSelect @bind-Value="@position.GrundU_ID" class="form-control form-control-sm" id="GrundUnserer" style="min-width:165px;">
+                                            <option value=@DBNull.Value>--Select--</option>
+                                            @foreach (KTrkl_TxtGrund g in Grunds)
+                                                            {
+                                                @if (g.ArtGruppe.Equals("FELGEN"))
+                                                                {
+                                                    <option value="@g.Grund_ID">@g.Grund</option>
+                                                                }
+                                                            }
+                                        </InputSelect>
+                                    </td>
+
+                                    <td>
+                                        <InputSelect @bind-Value="@position.HatKundeRecht" class="form-control form-control-sm" id="HatKundeRecht">
+                                            <option value=@DBNull.Value>--Select--</option>
+                                            <option value="Ja">Ja</option>
+                                            <option value="Nein">Nein</option>
+                                        </InputSelect>
+                                    </td>
+
+                                    @if (KTrkl_Reklamation.Web_ID == null)
+                                    {
+                                        <td>
+                                            <InputText @bind-Value="@position.Bemerkung" class="form-control form-control-sm" id="Bemerkung" />
+                                        </td>
+                                    }
+                                    else
+                                    {
+                                        <td @onclick="(() => OpenBemerkungTextModal(position.Bemerkung))">
+                                            <InputText @bind-Value="@position.Bemerkung" class="form-control form-control-sm" id="Bemerkung" readonly />
+                                        </td>
+                                    }
+
+
+                                    <td>
+                                        <InputNumber @bind-Value="@position.ProduktionsJahr" class="form-control form-control-sm" id="ProduktionsJahr" />
+                                    </td>
+                                    <td>
+                                        <InputText @bind-Value="@position.ProduktionsbatchDatum" class="form-control form-control-sm" id="ProduktionsbatchDatum" />
+                                    </td>
+                                    <td>
+                                        <InputText @bind-Value="@position.Hersteller" class="form-control form-control-sm" id="Hersteller" />
+                                    </td>
+
+                                    <td>
+                                        <InputCheckbox @bind-Value="@position.isProFehler" class="form-control form-control-sm" id="PrFehlerC" />
+                                    </td>
+
+                                    <td>
+                                        <InputSelect @bind-Value="@position.ErgebnisWare" class="form-control form-control-sm" id="ErgebnisWare">
+                                            <option value=@DBNull.Value>--Select--</option>
+                                            <option value="WE">WE</option>
+                                            <option value="ASK">ASK</option>
+                                        </InputSelect>
+                                    </td>
+
+                                    <td>
+                                        <button @onclick="@(() => openDeleteModal(position))" type="button" class="btn btn-sm btn-outline-danger p-0 m-0">
+                                            <MudIcon Icon="@Icons.Material.Filled.Delete" Title="Delete" />
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            }
+
+            @if (othersCount != 0)
+            {
+                <div class="row">
+                    <div class="col-9">
+                        <table class="table formtable">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>Menge</th>
+                                    <th>ArtGruppe</th>
+                                    <th>Artikelnummer</th>
+                                    <th>GdKunde</th>
+                                    <th>GdUnserer</th>
+                                    <th>HatKundeRecht</th>
+                                    <th>PrFehler</th>
+                                    <th>ErgebnisWare</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (KTrkl_Positionen position in KTrkl_Reklamation.Positionens)
+                                {
+                                    @if (position.ArtGruppe == null || (!position.ArtGruppe.Equals("FELGEN") && !position.ArtGruppe.Equals("ALU") && !position.ArtGruppe.Equals("REIFEN")))
+                                    {
+                                        <tr>
+                                            <td>
+                                                <button @onclick="(()=> navigateToAdd(position))" type="button" class="btn btn-sm btn-outline-success p-0 m-0">
+                                                    <MudIcon Icon="@Icons.Material.Filled.Add" Title="Add" />
+                                                </button>
+                                            </td>
+                                            <td>
+                                                <InputNumber @bind-Value="@position.Menge" class="form-control form-control-sm" id="Menge" readonly />
+                                            </td>
+                                            <td>
+                                                <InputText @bind-Value="@position.ArtGruppe" class="form-control form-control-sm" id="ArtGruppe" readonly style="min-width:80px;" />
+                                            </td>
+                                            <td>
+                                                <InputText @bind-Value="@position.Artikelnummer" class="form-control form-control-sm" id="Artikelnummer" style="min-width:170px" readonly />
+                                            </td>
+
+                                            <td>
+                                                <InputSelect @bind-Value="@position.GrundK_ID" class="form-control form-control-sm" id="GrundKunde" style="min-width:170px;">
+                                                    <option value=@DBNull.Value>--Select--</option>
+                                                    @foreach (KTrkl_TxtGrund g in Grunds)
+                                                                    {
+                                                        @if (g.ArtGruppe.Equals("FELGEN"))
+                                                                        {
+                                                            <option value="@g.Grund_ID">@g.Grund</option>
+                                                                        }
+                                                                    }
+                                                </InputSelect>
+                                            </td>
+
+                                            <td>
+                                                <InputSelect @bind-Value="@position.GrundU_ID" class="form-control form-control-sm" id="GrundUnserer" style="min-width:170px;">
+                                                    <option value=@DBNull.Value>--Select--</option>
+                                                    @foreach (KTrkl_TxtGrund g in Grunds)
+                                                                    {
+                                                        @if (g.ArtGruppe.Equals("FELGEN"))
+                                                                        {
+                                                            <option value="@g.Grund_ID">@g.Grund</option>
+                                                                        }
+                                                                    }
+                                                </InputSelect>
+                                            </td>
+
+                                            <td>
+                                                <InputSelect @bind-Value="@position.HatKundeRecht" class="form-control form-control-sm" id="HatKundeRecht">
+                                                    <option value=@DBNull.Value>--Select--</option>
+                                                    <option value="Ja">Ja</option>
+                                                    <option value="Nein">Nein</option>
+                                                </InputSelect>
+                                            </td>
+
+                                            <td>
+                                                <InputCheckbox @bind-Value="@position.isProFehler" class="form-control form-control-sm" id="PrFehlerC" />
+                                            </td>
+
+
+                                            <td>
+                                                <InputSelect @bind-Value="@position.ErgebnisWare" class="form-control form-control-sm" id="ErgebnisWare">
+                                                    <option value=@DBNull.Value>--Select--</option>
+                                                    <option value="WE">WE</option>
+                                                    <option value="ASK">ASK</option>
+                                                </InputSelect>
+                                            </td>
+
+                                            <td>
+                                                <button @onclick="@(() => openDeleteModal(position))" type="button" class="btn btn-sm btn-outline-danger p-0 m-0">
+                                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Title="Delete" />
+                                                </button>
+                                            </td>
+
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+
+            }
+
+            <button @onclick="navigateToAddPos" type="button" class="btn btn-primary mb-2 ml-5 btn-sm" style="display:inline-block">Position Hinzufügen</button>
+
+
+
+            @if (isFail)
+            {
+                <p style="display:inline-block;" class="ml-4">Fehler beim speichern..</p>
+            }
+        </EditForm>
+    </div>
+
+    @if (showDeleteDialog)
+    {
+        <DeleteArtikelModal PositionToDelete="positionToDelete" EDeletePosition="deleteSelectedArtikel" ECancelDelete="CancelDelete" />
+    }
+
+    @if (showBemerkungText)
+    {
+        <BemerkungTextDialog BemerkungText="@BemerkungToModal" CloseDialog="@(()=> showBemerkungText=false)"/>
+    }
+
+
+
+}
+
+
+@code {
+
+    [Parameter]
+    public KTrkl_Reklamation KTrkl_Reklamation { get; set; }
+
+    [Parameter]
+    public List<KTrkl_TxtGrund> Grunds { get; set; }
+
+    [Parameter]
+    public EventCallback<KTrkl_Positionen> ENavigateToAdd { get; set; }
+
+    [Parameter]
+    public EventCallback<KTrkl_Reklamation> ENavigateToAddPos { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> eSaveChanges { get; set; }
+
+    KTrkl_Positionen positionToDelete;
+
+    int reifenCount { get; set; } = 0;
+    int felgenCount { get; set; } = 0;
+    int othersCount { get; set; } = 0;
+
+    bool isFail = false;
+    bool showDeleteDialog = false;
+    bool showBemerkungText = false;
+    string BemerkungToModal;
+
+    protected override void OnParametersSet()
+    {
+
+        isFail = false;
+
+        reifenCount = KTrkl_Reklamation.Positionens.Count(p => p.ArtGruppe != null && p.ArtGruppe.Equals("REIFEN"));
+        felgenCount = KTrkl_Reklamation.Positionens.Count(p => p.ArtGruppe != null && (p.ArtGruppe.Equals("FELGEN") || p.ArtGruppe.Equals("ALU")));
+        othersCount = KTrkl_Reklamation.Positionens.Count(p => p.ArtGruppe == null || (!p.ArtGruppe.Equals("FELGEN") && !p.ArtGruppe.Equals("ALU") && !p.ArtGruppe.Equals("REIFEN")));
+    }
+    async Task navigateToAdd(KTrkl_Positionen position)
+    {
+        await eSaveChanges.InvokeAsync(true);
+        await ENavigateToAdd.InvokeAsync(position);
+    }
+    async Task navigateToAddPos()
+    {
+        await eSaveChanges.InvokeAsync(true);
+        await ENavigateToAddPos.InvokeAsync(KTrkl_Reklamation);
+    }
+    void openDeleteModal(KTrkl_Positionen position)
+    {
+        positionToDelete = position;
+        showDeleteDialog = true;
+
+    }
+    void CancelDelete()
+    {
+        showDeleteDialog = false;
+        positionToDelete = null;
+    }
+    void OpenBemerkungTextModal(string text)
+    {
+        BemerkungToModal = text;
+        showBemerkungText = true;
+    }
+    async Task deleteSelectedArtikel(KTrkl_Positionen positionToDelete)
+    {
+        KTrkl_Reklamation.Positionens.Remove(positionToDelete);
+        await eSaveChanges.InvokeAsync(true);
+        showDeleteDialog = false;
+    }
+
+
+}
